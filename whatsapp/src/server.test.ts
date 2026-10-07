@@ -53,6 +53,16 @@ describe('WhatsApp HTTP contract', () => {
     expect((await app.inject('/readyz')).statusCode).toBe(503);
   });
 
+  it('does not send while disconnected or unable to reserve in PostgreSQL', async () => {
+    const { post, sender, requests } = harness();
+    sender.ready = false;
+    expect((await post()).statusCode).toBe(503);
+    sender.ready = true;
+    requests.reserve.mockRejectedValueOnce(new Error('database unavailable'));
+    expect((await post()).statusCode).toBe(503);
+    expect(sender.sendText).not.toHaveBeenCalled();
+  });
+
   it('requires the service token and validates the request', async () => {
     const { app, post, sender } = harness();
     expect((await app.inject({ method: 'POST', url: '/v1/messages', payload: validBody })).statusCode).toBe(401);
@@ -92,5 +102,13 @@ describe('WhatsApp HTTP contract', () => {
     expect((await post(key)).statusCode).toBe(502);
     expect((await post(key)).statusCode).toBe(409);
     expect(sender.sendText).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns an unknown result when the provider times out', async () => {
+    const { post, sender } = harness();
+    sender.sendText.mockRejectedValueOnce(new Error('Baileys send timed out'));
+    const response = await post();
+    expect(response.statusCode).toBe(502);
+    expect(response.json().code).toBe('outcome_unknown');
   });
 });

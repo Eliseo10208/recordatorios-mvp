@@ -15,7 +15,10 @@ export class WhatsAppSession {
   private reconnectTimer: NodeJS.Timeout | null = null;
   private saveQueue: Promise<void> = Promise.resolve();
 
-  constructor(private readonly store: PostgresAuthStore) {}
+  constructor(
+    private readonly store: PostgresAuthStore,
+    private readonly socketFactory: typeof makeWASocket = makeWASocket,
+  ) {}
 
   get ready(): boolean {
     return this.connected && this.socket !== null && !this.stopped;
@@ -28,7 +31,7 @@ export class WhatsAppSession {
 
   private async connect(): Promise<void> {
     const { state, saveCreds } = await this.store.load();
-    const socket = makeWASocket({
+    const socket = this.socketFactory({
       auth: state,
       logger: baileysLogger,
       markOnlineOnConnect: false,
