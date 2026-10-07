@@ -10,6 +10,7 @@
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main.js",
     "pair": "tsx src/pair.ts",
+    "db:check": "tsx src/check-db.ts",
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "tsc -p tsconfig.json --noEmit",

@@ -61,6 +61,12 @@ Alembic; verifica el host y el nombre de base sin mostrar la contraseña.
 `BAILEYS_ENCRYPTION_KEY` es una clave aleatoria de 32 bytes codificada en
 base64; conserva la misma clave tras reinicios. `WHATSAPP_SERVICE_TOKEN` es
 un secreto aleatorio de al menos 32 caracteres compartido sólo con el worker.
+Después de la migración, `api/scripts/provision_whatsapp_role.py` crea el rol
+`whatsapp_sender` con acceso únicamente a las tres tablas del emisor. Requiere
+`MIGRATION_DATABASE_URL` y una contraseña aleatoria en
+`WHATSAPP_DB_PASSWORD`; no imprime ninguno de los dos valores. Usa la URL
+directa de ese rol como `whatsapp/DATABASE_URL` en local y Render. La URL del
+propietario se reserva para migraciones.
 
 ```bash
 pnpm install --frozen-lockfile
@@ -80,6 +86,9 @@ pnpm --filter @recordatorios/whatsapp test
 pnpm --filter @recordatorios/whatsapp build
 pnpm --filter @recordatorios/whatsapp start
 ```
+
+`pnpm --filter @recordatorios/whatsapp db:check` verifica la conexión del rol
+restringido y la lectura del almacén cifrado sin imprimir credenciales.
 
 `GET /healthz` comprueba el proceso; `GET /readyz` exige sesión conectada y
 almacén de autenticación accesible. Las pruebas de PostgreSQL usan únicamente
