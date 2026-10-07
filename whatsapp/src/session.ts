@@ -40,6 +40,7 @@ export class WhatsAppSession {
     this.socket = socket;
     this.connected = false;
     socket.ev.on('creds.update', () => {
+      if (this.stopped || this.socket !== socket) return;
       this.saveQueue = this.saveQueue.then(saveCreds);
       void this.saveQueue.catch(() => {
         this.connected = false;

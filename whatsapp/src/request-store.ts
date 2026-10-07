@@ -9,6 +9,15 @@ export type RequestRecord = {
 export class RequestStore {
   constructor(private readonly pool: Pool) {}
 
+  async lookup(key: string): Promise<RequestRecord | null> {
+    const result = await this.pool.query<RequestRecord>(
+      `SELECT payload_hash, status, provider_message_id
+       FROM whatsapp_send_requests WHERE request_key = $1`,
+      [key],
+    );
+    return result.rows[0] ?? null;
+  }
+
   async reserve(key: string, hash: string): Promise<{ created: boolean; record: RequestRecord }> {
     const result = await this.pool.query<RequestRecord>(
       `INSERT INTO whatsapp_send_requests (request_key, payload_hash, status)
@@ -18,13 +27,9 @@ export class RequestStore {
       [key, hash],
     );
     if (result.rows[0]) return { created: true, record: result.rows[0] };
-    const existing = await this.pool.query<RequestRecord>(
-      `SELECT payload_hash, status, provider_message_id
-       FROM whatsapp_send_requests WHERE request_key = $1`,
-      [key],
-    );
-    if (!existing.rows[0]) throw new Error('Request reservation was not visible');
-    return { created: false, record: existing.rows[0] };
+    const existing = await this.lookup(key);
+    if (!existing) throw new Error('Request reservation was not visible');
+    return { created: false, record: existing };
   }
 
   async accept(key: string, providerId: string): Promise<void> {

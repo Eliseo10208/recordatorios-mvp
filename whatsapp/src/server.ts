@@ -5,7 +5,7 @@ import type { RequestStore } from './request-store.js';
 type Sender = { ready: boolean; sendText(phone: string, message: string): Promise<string> };
 type Options = {
   sender: Sender;
-  requests: Pick<RequestStore, 'reserve' | 'accept' | 'unknown'>;
+  requests: Pick<RequestStore, 'lookup' | 'reserve' | 'accept' | 'unknown'>;
   serviceToken: string;
   isLeader: () => boolean;
   databaseReady: () => Promise<boolean>;
@@ -77,6 +77,23 @@ export function buildServer(options: Options): FastifyInstance {
     if (!options.isLeader() || !options.sender.ready) {
       return reply.code(503).type('application/problem+json').send(problem(503, 'unavailable', 'Service unavailable'));
     }
+    const hash = createHash('sha256').update(phone).update('\0').update(message).digest('hex');
+    const replay = (record: { payload_hash: string; status: string; provider_message_id: string | null }) => {
+      if (record.payload_hash !== hash) {
+        return reply.code(409).type('application/problem+json').send(problem(409, 'idempotency_conflict', 'Idempotency conflict'));
+      }
+      if (record.status === 'accepted') {
+        return { status: 'accepted', messageId: record.provider_message_id };
+      }
+      return reply.code(409).type('application/problem+json').send(problem(409, 'outcome_unknown', 'Outcome unknown'));
+    };
+    try {
+      const existing = await options.requests.lookup(key);
+      if (existing) return replay(existing);
+    } catch {
+      return reply.code(503).type('application/problem+json').send(problem(503, 'unavailable', 'Service unavailable'));
+    }
+
     const now = Date.now();
     if (now - windowStarted >= 60_000) {
       windowStarted = now;
@@ -87,24 +104,19 @@ export function buildServer(options: Options): FastifyInstance {
       return reply.code(429).type('application/problem+json').send(problem(429, 'rate_limited', 'Rate limit exceeded'));
     }
 
-    const hash = createHash('sha256').update(phone).update('\0').update(message).digest('hex');
+    sentInWindow += 1;
     let reservation;
     try {
       reservation = await options.requests.reserve(key, hash);
     } catch {
+      sentInWindow -= 1;
       return reply.code(503).type('application/problem+json').send(problem(503, 'unavailable', 'Service unavailable'));
     }
     if (!reservation.created) {
-      if (reservation.record.payload_hash !== hash) {
-        return reply.code(409).type('application/problem+json').send(problem(409, 'idempotency_conflict', 'Idempotency conflict'));
-      }
-      if (reservation.record.status === 'accepted') {
-        return { status: 'accepted', messageId: reservation.record.provider_message_id };
-      }
-      return reply.code(409).type('application/problem+json').send(problem(409, 'outcome_unknown', 'Outcome unknown'));
+      sentInWindow -= 1;
+      return replay(reservation.record);
     }
 
-    sentInWindow += 1;
     try {
       const providerId = await options.sender.sendText(phone, message);
       await options.requests.accept(key, providerId);

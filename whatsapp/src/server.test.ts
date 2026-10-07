@@ -12,6 +12,7 @@ function harness() {
   const sendText = vi.fn(async () => 'provider-123');
   const sender = { ready: true, sendText };
   const requests = {
+    lookup: vi.fn(async (key: string) => records.get(key) ?? null),
     reserve: vi.fn(async (key: string, hash: string) => {
       const existing = records.get(key);
       if (existing) return { created: false, record: existing };
@@ -110,5 +111,14 @@ describe('WhatsApp HTTP contract', () => {
     const response = await post();
     expect(response.statusCode).toBe(502);
     expect(response.json().code).toBe('outcome_unknown');
+  });
+
+  it('limits new sends while allowing a cached idempotent response', async () => {
+    const { post, sender } = harness();
+    const keys = Array.from({ length: 30 }, () => randomUUID());
+    for (const key of keys) expect((await post(key)).statusCode).toBe(200);
+    expect((await post()).statusCode).toBe(429);
+    expect((await post(keys[0])).statusCode).toBe(200);
+    expect(sender.sendText).toHaveBeenCalledTimes(30);
   });
 });
