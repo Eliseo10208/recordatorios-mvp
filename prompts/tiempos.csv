@@ -26,3 +26,6 @@ whatsapp-destination,después,,,,No se inició medición de esta etapa; no se es
 release-whatsapp-011,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
 release-whatsapp-011,durante,,,,No se inició medición de esta etapa; no se estimó la duración
 release-whatsapp-011,después,,,,No se inició medición de esta etapa; no se estimó la duración
+whatsapp-uptime,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
+whatsapp-uptime,durante,,,,No se inició medición de esta etapa; no se estimó la duración
+whatsapp-uptime,después,,,,No se inició medición de esta etapa; no se estimó la duración

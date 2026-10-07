@@ -95,7 +95,7 @@ almacén de autenticación accesible. Las pruebas de PostgreSQL usan únicamente
 `TEST_DATABASE_URL` apuntando a una base cuyo nombre contenga `_test`; CI crea
 esa base y aplica Alembic antes de ejecutarlas. Las pruebas ordinarias nunca
 envían mensajes reales. El despliegue Render se describe en `render.yaml` y
-usa secretos configurados en el panel. La release `v0.1.0` está disponible en
+usa secretos configurados en el panel. La release `v0.1.1` está disponible en
 `https://recordatorios-whatsapp-kxia.onrender.com`. El worker usará esa URL
 base como `WHATSAPP_API_URL` y añadirá `/v1/messages`. Tras el primer despliegue,
 `/healthz` y `/readyz` respondieron 200; una solicitud sin token recibió 401.
@@ -109,3 +109,10 @@ activa siga configurada. Para esta prueba la fecha límite es el 14 de octubre
 de 2026 a las 23:05:35 UTC. GitHub puede retrasar u omitir
 ejecuciones programadas; este mecanismo no garantiza disponibilidad ni
 puntualidad de los recordatorios.
+
+El GET externo mantiene activo Render, pero `/healthz` no consulta Neon. Mientras
+el servicio está en ejecución, la conexión directa que posee el bloqueo de la
+sesión consulta PostgreSQL cada dos minutos para evitar que Neon suspenda el
+cómputo tras cinco minutos de inactividad. Esto consume horas de cómputo del
+plan gratuito durante la prueba. Si la conexión se pierde, el proceso sale para
+que Render lo reinicie; el motivo se registra sin credenciales ni mensajes.
