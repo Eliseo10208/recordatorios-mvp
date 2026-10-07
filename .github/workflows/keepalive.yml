@@ -1,0 +1,25 @@
+name: Week-long free-tier health check
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ping:
+    if: vars.KEEPALIVE_ACTIVE == 'true'
+    runs-on: ubuntu-latest
+    env:
+      WHATSAPP_HEALTH_URL: ${{ vars.WHATSAPP_HEALTH_URL }}
+      API_HEALTH_URL: ${{ vars.API_HEALTH_URL }}
+      WORKER_HEALTH_URL: ${{ vars.WORKER_HEALTH_URL }}
+    steps:
+      - name: Check WhatsApp
+        if: env.WHATSAPP_HEALTH_URL != ''
+        run: curl --fail --silent --show-error --max-time 30 "$WHATSAPP_HEALTH_URL/healthz"
+      - name: Check API
+        if: env.API_HEALTH_URL != ''
+        run: curl --fail --silent --show-error --max-time 30 "$API_HEALTH_URL/healthz"
+      - name: Check worker
+        if: env.WORKER_HEALTH_URL != ''
+        run: curl --fail --silent --show-error --max-time 30 "$WORKER_HEALTH_URL/healthz"

@@ -88,3 +88,11 @@ esa base y aplica Alembic antes de ejecutarlas. Las pruebas ordinarias nunca
 envían mensajes reales. El despliegue Render se describe en `render.yaml` y
 usa secretos configurados en el panel. La URL HTTPS la asigna Render; el
 worker añadirá `/v1/messages` a esa URL.
+
+Durante la semana de prueba, `.github/workflows/keepalive.yml` consulta las
+rutas `/healthz` cada cinco minutos. Se activa con la variable de repositorio
+`KEEPALIVE_ACTIVE=true` y las URLs base `WHATSAPP_HEALTH_URL`, `API_HEALTH_URL`
+y `WORKER_HEALTH_URL` cuando cada servicio exista. Se desactiva quitando la
+variable activa al terminar la semana. GitHub puede retrasar u omitir
+ejecuciones programadas; este mecanismo no garantiza disponibilidad ni
+puntualidad de los recordatorios.
