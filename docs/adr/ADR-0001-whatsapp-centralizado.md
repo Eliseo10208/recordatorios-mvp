@@ -53,6 +53,9 @@ flowchart LR
 
 ## Contrato mínimo
 
+El contrato completo de esta versión está en
+[WHATSAPP_V1.md](../contracts/WHATSAPP_V1.md).
+
 Render proporciona la URL base HTTPS pública al desplegar whatsapp/. El worker
 la recibe mediante WHATSAPP_API_URL; whatsapp/ implementa la ruta versionada
 /v1/messages. La URL real no se fija en el repositorio. Como el servicio Free
@@ -61,6 +64,7 @@ no recibe tráfico privado, la llamada usa HTTPS y autenticación entre servicio
 ```http
 POST /v1/messages
 Authorization: Bearer <service-token>
+Idempotency-Key: <uuid>
 Content-Type: application/json
 ```
 
@@ -71,8 +75,8 @@ Content-Type: application/json
 }
 ```
 
-El contrato definitivo debe precisar autenticación, validación, límites,
-timeouts, errores, estados e idempotencia antes de implementar.
+El contrato versionado precisa autenticación, validación, límites, errores,
+estados e idempotencia. El consumidor aplica un timeout explícito.
 
 Una respuesta exitosa significa “aceptado por el servicio”. No significa
 “entregado” o “leído” salvo que exista evidencia adicional.

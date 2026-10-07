@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: recordatorios-whatsapp
+    runtime: node
+    plan: free
+    region: oregon
+    branch: main
+    autoDeployTrigger: checksPass
+    buildCommand: npm install -g pnpm@11.19.0 && pnpm install --frozen-lockfile && pnpm --filter @recordatorios/whatsapp build
+    startCommand: pnpm --filter @recordatorios/whatsapp start
+    healthCheckPath: /healthz
+    maxShutdownDelaySeconds: 30
+    buildFilter:
+      paths:
+        - package.json
+        - pnpm-workspace.yaml
+        - pnpm-lock.yaml
+        - whatsapp/**
+    envVars:
+      - key: NODE_VERSION
+        value: 24.15.0
+      - key: DATABASE_URL
+        sync: false
+      - key: BAILEYS_ENCRYPTION_KEY
+        sync: false
+      - key: WHATSAPP_SERVICE_TOKEN
+        sync: false
