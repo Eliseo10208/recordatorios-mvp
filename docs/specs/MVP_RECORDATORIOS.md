@@ -341,6 +341,15 @@ erDiagram
         text value_ciphertext
         datetime updated_at
     }
+
+    WHATSAPP_SEND_REQUESTS {
+        uuid request_key PK
+        string payload_hash
+        string status
+        string provider_message_id
+        datetime created_at
+        datetime updated_at
+    }
 ```
 
 Restricciones obligatorias:
@@ -350,8 +359,9 @@ Restricciones obligatorias:
 - índice único parcial sobre phone_hash para destinos de WhatsApp activos;
 - índice parcial por scheduled_at_utc para recordatorios scheduled;
 - (session_id, key_type, key_id) único para las claves Signal;
+- request_key único para solicitudes HTTP de WhatsApp;
 - número completo cifrado y redactado en logs;
-- provider_message_id nullable porque el servicio puede no devolverlo.
+- provider_message_id nullable para solicitudes con resultado desconocido.
 
 ## 10. Estados
 
@@ -414,7 +424,8 @@ activo; una instancia que duerme no garantiza puntualidad.
 
 ## 12. Contrato backend Python → whatsapp/
 
-El contrato exacto se versiona antes de implementar. Su forma mínima es:
+El contrato versionado completo está en
+[WHATSAPP_V1.md](../contracts/WHATSAPP_V1.md). Su forma mínima es:
 
 WHATSAPP_API_URL contiene la URL base HTTPS que Render asigna a whatsapp/ tras
 el despliegue. El worker añade la ruta versionada indicada abajo; no se fija un
@@ -423,6 +434,7 @@ dominio concreto en el código ni se expone la URL o su token al navegador.
 ```http
 POST /v1/messages
 Authorization: Bearer <service-token>
+Idempotency-Key: <uuid>
 Content-Type: application/json
 ```
 
@@ -437,7 +449,7 @@ Respuesta mínima:
 
 ```json
 {
-  "messageId": "nullable-provider-id",
+  "messageId": "provider-id",
   "status": "accepted"
 }
 ```
@@ -447,9 +459,9 @@ Reglas:
 - TLS y autenticación servidor a servidor;
 - timeout explícito;
 - payload limitado y validado;
-- Idempotency-Key o referenceId sólo si el servicio lo implementa;
-- si un timeout puede haber ocurrido después del envío y no hay idempotencia, el
-  resultado queda unknown y no se reintenta a ciegas;
+- Idempotency-Key obligatorio y persistido por whatsapp/;
+- si ocurre un timeout después de iniciar el envío, el resultado queda unknown
+  y no se reintenta automáticamente, aunque exista la clave de idempotencia;
 - ningún endpoint de whatsapp/ se expone al navegador;
 - ninguna prueba ordinaria envía mensajes reales.
 
