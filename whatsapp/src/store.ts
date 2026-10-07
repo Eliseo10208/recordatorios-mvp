@@ -29,6 +29,32 @@ export class PostgresAuthStore {
     await this.pool.query('SELECT 1 FROM baileys_signal_keys WHERE session_id = $1 LIMIT 1', [SESSION_ID]);
   }
 
+  async resetUnregistered(): Promise<void> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await client.query<{ creds_ciphertext: string }>(
+        'SELECT creds_ciphertext FROM baileys_auth WHERE session_id = $1 FOR UPDATE',
+        [SESSION_ID],
+      );
+      const row = result.rows[0];
+      if (!row) throw new Error('WhatsApp credentials are missing');
+      const current = JSON.parse(this.box.open(row.creds_ciphertext), BufferJSON.reviver) as AuthenticationCreds;
+      if (current.registered) throw new Error('A registered WhatsApp session cannot be reset automatically');
+      await client.query('DELETE FROM baileys_signal_keys WHERE session_id = $1', [SESSION_ID]);
+      await client.query(
+        'UPDATE baileys_auth SET creds_ciphertext = $2, updated_at = now() WHERE session_id = $1',
+        [SESSION_ID, this.box.seal(JSON.stringify(initAuthCreds(), BufferJSON.replacer))],
+      );
+      await client.query('COMMIT');
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   async load(): Promise<{ state: AuthenticationState; saveCreds: () => Promise<void> }> {
     const result = await this.pool.query<{ creds_ciphertext: string }>(
       'SELECT creds_ciphertext FROM baileys_auth WHERE session_id = $1',

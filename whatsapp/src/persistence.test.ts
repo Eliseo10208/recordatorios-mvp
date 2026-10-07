@@ -47,4 +47,22 @@ dbTests('PostgreSQL persistence', () => {
     const accepted = await second.reserve(key, 'hash-a');
     expect(accepted).toMatchObject({ created: false, record: { status: 'accepted', provider_message_id: 'provider-1' } });
   });
+
+  it('only resets credentials that were never linked', async () => {
+    const store = new PostgresAuthStore(pool!, new SecretBox(randomBytes(32).toString('base64')));
+    // This test uses a fresh local database after the preceding test, so use
+    // a separate key only after clearing the prior auth row.
+    await pool!.query('TRUNCATE baileys_signal_keys, baileys_auth CASCADE');
+    const unregistered = await store.load();
+    unregistered.state.creds.me = { id: 'temporary@s.whatsapp.net' };
+    await unregistered.saveCreds();
+    await unregistered.state.keys.set({ 'app-state-sync-key': { temporary: { keyData: Buffer.from('temporary') } } });
+    await store.resetUnregistered();
+    const fresh = await store.load();
+    expect(fresh.state.creds.me).toBeUndefined();
+    expect((await fresh.state.keys.get('app-state-sync-key', ['temporary'])).temporary).toBeUndefined();
+    fresh.state.creds.registered = true;
+    await fresh.saveCreds();
+    await expect(store.resetUnregistered()).rejects.toThrow('cannot be reset');
+  });
 });
