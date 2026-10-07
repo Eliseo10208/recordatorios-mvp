@@ -20,3 +20,6 @@ mostrar-esquema-db,durante,,,,No se inició medición de esta etapa; no se estim
 mostrar-esquema-db,después,,,,No se inició medición de esta etapa; no se estimó la duración
 implementar-mvp-gitflow,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
 implementar-mvp-gitflow,durante,,,,No se inició medición al comenzar la implementación; no se estimó la duración
+whatsapp-destination,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
+whatsapp-destination,durante,,,,No se inició medición de esta etapa; no se estimó la duración
+whatsapp-destination,después,,,,No se inició medición de esta etapa; no se estimó la duración

@@ -459,6 +459,10 @@ Reglas:
 - TLS y autenticación servidor a servidor;
 - timeout explícito;
 - payload limitado y validado;
+- para un móvil mexicano recibido como +52 y diez dígitos, whatsapp/ forma el
+  destinatario de WhatsApp con +521 y esos diez dígitos; un número ya recibido
+  como +521 no vuelve a modificarse, conforme al
+  [formato internacional de WhatsApp](https://faq.whatsapp.com/1294841057948784/);
 - Idempotency-Key obligatorio y persistido por whatsapp/;
 - si ocurre un timeout después de iniciar el envío, el resultado queda unknown
   y no se reintenta automáticamente, aunque exista la clave de idempotencia;
