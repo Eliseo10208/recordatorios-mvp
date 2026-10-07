@@ -38,9 +38,19 @@ describe('Baileys session', () => {
     listeners.get('connection.update')?.({ connection: 'open' });
     expect(session.ready).toBe(true);
     expect(await session.sendText('+525512345678', 'hola')).toBe('message-1');
-    expect(sendMessage).toHaveBeenCalledWith('525512345678@s.whatsapp.net', { text: 'hola' });
+    expect(sendMessage).toHaveBeenCalledWith('5215512345678@s.whatsapp.net', { text: 'hola' });
     listeners.get('connection.update')?.({ connection: 'close', lastDisconnect: { error: { output: { statusCode: 401 } } } });
     expect(session.ready).toBe(false);
+  });
+
+  it('does not add a second Mexican mobile prefix and leaves other countries intact', async () => {
+    const { session, listeners, sendMessage } = harness();
+    await session.start();
+    listeners.get('connection.update')?.({ connection: 'open' });
+    await session.sendText('+5215512345678', 'hola');
+    await session.sendText('+14155552671', 'hola');
+    expect(sendMessage).toHaveBeenNthCalledWith(1, '5215512345678@s.whatsapp.net', { text: 'hola' });
+    expect(sendMessage).toHaveBeenNthCalledWith(2, '14155552671@s.whatsapp.net', { text: 'hola' });
   });
 
   it('treats a send timeout as ambiguous', async () => {
