@@ -40,6 +40,8 @@ Content-Type: application/json
   envío. Si se interrumpe durante el envío, registra o recupera el resultado
   como unknown y no lo envía de nuevo automáticamente.
 - No hay reintentos internos de Baileys en este endpoint.
+- El servicio espera como máximo 20 segundos a Baileys. Si vence ese plazo,
+  conserva el resultado como unknown, aunque el envío pudiera terminar después.
 
 Respuesta cuando Baileys acepta la llamada:
 

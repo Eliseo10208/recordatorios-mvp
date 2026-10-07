@@ -6,6 +6,7 @@ import pino from 'pino';
 import { PostgresAuthStore } from './store.js';
 
 const baileysLogger = pino({ level: 'silent' });
+const SEND_TIMEOUT_MS = 20_000;
 
 export class WhatsAppSession {
   private socket: WASocket | null = null;
@@ -62,9 +63,20 @@ export class WhatsAppSession {
 
   async sendText(phone: string, message: string): Promise<string> {
     if (!this.ready || !this.socket) throw new Error('WhatsApp session is not connected');
-    const result = await this.socket.sendMessage(`${phone.slice(1)}@s.whatsapp.net`, { text: message });
-    if (!result?.key.id) throw new Error('Baileys did not return a message ID');
-    return result.key.id;
+    let timer: NodeJS.Timeout | undefined;
+    try {
+      const timedOut = new Promise<never>((_resolve, reject) => {
+        timer = setTimeout(() => reject(new Error('Baileys send timed out')), SEND_TIMEOUT_MS);
+      });
+      const result = await Promise.race([
+        this.socket.sendMessage(`${phone.slice(1)}@s.whatsapp.net`, { text: message }),
+        timedOut,
+      ]);
+      if (!result?.key.id) throw new Error('Baileys did not return a message ID');
+      return result.key.id;
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
   }
 
   async stop(): Promise<void> {
