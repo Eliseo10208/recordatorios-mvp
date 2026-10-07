@@ -9,6 +9,12 @@ import { currentWaVersion } from './wa-version.js';
 const baileysLogger = pino({ level: 'silent' });
 const SEND_TIMEOUT_MS = 20_000;
 
+function recipientJid(phone: string): string {
+  // WhatsApp uses 521 followed by ten digits for Mexican mobile accounts.
+  const user = /^\+52\d{10}$/.test(phone) ? `521${phone.slice(3)}` : phone.slice(1);
+  return `${user}@s.whatsapp.net`;
+}
+
 export class WhatsAppSession {
   private socket: WASocket | null = null;
   private connected = false;
@@ -76,7 +82,7 @@ export class WhatsAppSession {
         timer = setTimeout(() => reject(new Error('Baileys send timed out')), SEND_TIMEOUT_MS);
       });
       const result = await Promise.race([
-        this.socket.sendMessage(`${phone.slice(1)}@s.whatsapp.net`, { text: message }),
+        this.socket.sendMessage(recipientJid(phone), { text: message }),
         timedOut,
       ]);
       if (!result?.key.id) throw new Error('Baileys did not return a message ID');
