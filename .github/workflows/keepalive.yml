@@ -13,13 +13,28 @@ jobs:
       WHATSAPP_HEALTH_URL: ${{ vars.WHATSAPP_HEALTH_URL }}
       API_HEALTH_URL: ${{ vars.API_HEALTH_URL }}
       WORKER_HEALTH_URL: ${{ vars.WORKER_HEALTH_URL }}
+      KEEPALIVE_UNTIL_UTC: ${{ vars.KEEPALIVE_UNTIL_UTC }}
     steps:
+      - name: Check trial deadline
+        id: trial
+        run: |
+          if [ -z "$KEEPALIVE_UNTIL_UTC" ]; then
+            echo "active=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          now_epoch=$(date -u +%s)
+          until_epoch=$(date -u -d "$KEEPALIVE_UNTIL_UTC" +%s)
+          if [ "$now_epoch" -lt "$until_epoch" ]; then
+            echo "active=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "active=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Check WhatsApp
-        if: env.WHATSAPP_HEALTH_URL != ''
+        if: steps.trial.outputs.active == 'true' && env.WHATSAPP_HEALTH_URL != ''
         run: curl --fail --silent --show-error --max-time 30 "$WHATSAPP_HEALTH_URL/healthz"
       - name: Check API
-        if: env.API_HEALTH_URL != ''
+        if: steps.trial.outputs.active == 'true' && env.API_HEALTH_URL != ''
         run: curl --fail --silent --show-error --max-time 30 "$API_HEALTH_URL/healthz"
       - name: Check worker
-        if: env.WORKER_HEALTH_URL != ''
+        if: steps.trial.outputs.active == 'true' && env.WORKER_HEALTH_URL != ''
         run: curl --fail --silent --show-error --max-time 30 "$WORKER_HEALTH_URL/healthz"

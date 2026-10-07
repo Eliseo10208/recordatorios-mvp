@@ -95,13 +95,17 @@ almacén de autenticación accesible. Las pruebas de PostgreSQL usan únicamente
 `TEST_DATABASE_URL` apuntando a una base cuyo nombre contenga `_test`; CI crea
 esa base y aplica Alembic antes de ejecutarlas. Las pruebas ordinarias nunca
 envían mensajes reales. El despliegue Render se describe en `render.yaml` y
-usa secretos configurados en el panel. La URL HTTPS la asigna Render; el
-worker añadirá `/v1/messages` a esa URL.
+usa secretos configurados en el panel. La release `v0.1.0` está disponible en
+`https://recordatorios-whatsapp-kxia.onrender.com`. El worker usará esa URL
+base como `WHATSAPP_API_URL` y añadirá `/v1/messages`. Tras el primer despliegue,
+`/healthz` y `/readyz` respondieron 200; una solicitud sin token recibió 401.
 
 Durante la semana de prueba, `.github/workflows/keepalive.yml` consulta las
 rutas `/healthz` cada cinco minutos. Se activa con la variable de repositorio
-`KEEPALIVE_ACTIVE=true` y las URLs base `WHATSAPP_HEALTH_URL`, `API_HEALTH_URL`
-y `WORKER_HEALTH_URL` cuando cada servicio exista. Se desactiva quitando la
-variable activa al terminar la semana. GitHub puede retrasar u omitir
+`KEEPALIVE_ACTIVE=true`, una fecha límite UTC en `KEEPALIVE_UNTIL_UTC` y las
+URLs base `WHATSAPP_HEALTH_URL`, `API_HEALTH_URL` y `WORKER_HEALTH_URL` cuando
+cada servicio exista. El ping se omite desde la fecha límite aunque la variable
+activa siga configurada. Para esta prueba la fecha límite es el 14 de octubre
+de 2026 a las 23:05:35 UTC. GitHub puede retrasar u omitir
 ejecuciones programadas; este mecanismo no garantiza disponibilidad ni
 puntualidad de los recordatorios.
