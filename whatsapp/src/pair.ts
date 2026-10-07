@@ -6,7 +6,9 @@ import qrcode from 'qrcode-terminal';
 import { readConfig } from './config.js';
 import { SecretBox } from './crypto.js';
 import { SessionLock } from './lock.js';
+import { isLinked } from './linked.js';
 import { PostgresAuthStore } from './store.js';
+import { currentWaVersion } from './wa-version.js';
 
 if (existsSync('.env')) process.loadEnvFile('.env');
 const config = readConfig();
@@ -16,6 +18,7 @@ const store = new PostgresAuthStore(pool, new SecretBox(config.encryptionKey));
 
 async function pair(): Promise<void> {
   await lock.acquire();
+  const version = await currentWaVersion();
   for (let attempt = 0; attempt < 10; attempt += 1) {
     const { state, saveCreds } = await store.load();
     const result = await new Promise<'open' | 'retry'>((resolve, reject) => {
@@ -23,6 +26,7 @@ async function pair(): Promise<void> {
         auth: state,
         logger: pino({ level: 'silent' }),
         markOnlineOnConnect: false,
+        ...(version ? { version } : {}),
       });
       let queue = Promise.resolve();
       let settled = false;
@@ -48,6 +52,10 @@ async function pair(): Promise<void> {
           setTimeout(() => {
             void queue.then(saveCreds).then(() => {
               if (finished) return;
+              if (!isLinked(state.creds)) {
+                reject(new Error('WhatsApp opened without complete linked credentials'));
+                return;
+              }
               finished = true;
               socket.end(new Error('Pairing complete'));
               resolve('open');
@@ -56,9 +64,10 @@ async function pair(): Promise<void> {
         } else if (connection === 'close') {
           settled = true;
           const code = (lastDisconnect?.error as { output?: { statusCode?: number } } | undefined)?.output?.statusCode;
+          process.stderr.write(`Baileys desconectado: codigo=${code ?? 'desconocido'}, vinculado=${isLinked(state.creds)}.\n`);
           void queue.then(async () => {
             if (code === DisconnectReason.loggedOut) {
-              if (state.creds.registered) {
+              if (isLinked(state.creds)) {
                 throw new Error('WhatsApp logged out; the linked session needs manual recovery');
               }
               await store.resetUnregistered();

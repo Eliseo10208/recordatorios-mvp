@@ -2,6 +2,7 @@ import pg from 'pg';
 import { readConfig } from './config.js';
 import { SecretBox } from './crypto.js';
 import { PostgresAuthStore } from './store.js';
+import { isLinked } from './linked.js';
 
 process.loadEnvFile('.env');
 const config = readConfig();
@@ -28,7 +29,7 @@ try {
   } finally {
     lock.release();
   }
-  process.stdout.write(`Almacén OK para ${who.rows[0]?.current_user}; vinculado=${state.creds.registered}; claves=${keys.rows[0]?.count}; emisor_activo=${pairActive}.\n`);
+  process.stdout.write(`Almacén OK para ${who.rows[0]?.current_user}; vinculado=${isLinked(state.creds)}; claves=${keys.rows[0]?.count}; emisor_activo=${pairActive}.\n`);
 } catch (error) {
   const code = error && typeof error === 'object' && 'code' in error ? String(error.code) : 'unknown';
   process.stderr.write(`Error de conexión o almacén: ${code}.\n`);

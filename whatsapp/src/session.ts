@@ -4,6 +4,7 @@ import makeWASocket, {
 } from '@whiskeysockets/baileys';
 import pino from 'pino';
 import { PostgresAuthStore } from './store.js';
+import { currentWaVersion } from './wa-version.js';
 
 const baileysLogger = pino({ level: 'silent' });
 const SEND_TIMEOUT_MS = 20_000;
@@ -31,11 +32,13 @@ export class WhatsAppSession {
 
   private async connect(): Promise<void> {
     const { state, saveCreds } = await this.store.load();
+    const version = await currentWaVersion();
     const socket = this.socketFactory({
       auth: state,
       logger: baileysLogger,
       markOnlineOnConnect: false,
       syncFullHistory: false,
+      ...(version ? { version } : {}),
     });
     this.socket = socket;
     this.connected = false;

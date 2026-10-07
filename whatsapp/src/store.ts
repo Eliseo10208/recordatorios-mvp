@@ -10,6 +10,7 @@ import {
 } from '@whiskeysockets/baileys';
 import type { Pool } from 'pg';
 import { SecretBox } from './crypto.js';
+import { isLinked } from './linked.js';
 
 const SESSION_ID = 'central-sender';
 
@@ -40,7 +41,7 @@ export class PostgresAuthStore {
       const row = result.rows[0];
       if (!row) throw new Error('WhatsApp credentials are missing');
       const current = JSON.parse(this.box.open(row.creds_ciphertext), BufferJSON.reviver) as AuthenticationCreds;
-      if (current.registered) throw new Error('A registered WhatsApp session cannot be reset automatically');
+      if (isLinked(current)) throw new Error('A linked WhatsApp session cannot be reset automatically');
       await client.query('DELETE FROM baileys_signal_keys WHERE session_id = $1', [SESSION_ID]);
       await client.query(
         'UPDATE baileys_auth SET creds_ciphertext = $2, updated_at = now() WHERE session_id = $1',

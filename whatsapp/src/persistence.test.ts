@@ -61,7 +61,9 @@ dbTests('PostgreSQL persistence', () => {
     const fresh = await store.load();
     expect(fresh.state.creds.me).toBeUndefined();
     expect((await fresh.state.keys.get('app-state-sync-key', ['temporary'])).temporary).toBeUndefined();
-    fresh.state.creds.registered = true;
+    fresh.state.creds.me = { id: 'linked:1@s.whatsapp.net' };
+    fresh.state.creds.account = {} as NonNullable<typeof fresh.state.creds.account>;
+    expect(fresh.state.creds.registered).toBe(false);
     await fresh.saveCreds();
     await expect(store.resetUnregistered()).rejects.toThrow('cannot be reset');
   });
