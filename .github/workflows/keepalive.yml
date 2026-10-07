@@ -1,7 +1,7 @@
 name: Week-long free-tier health check
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '2-57/5 * * * *'
   workflow_dispatch:
 permissions:
   contents: read
@@ -31,7 +31,7 @@ jobs:
           fi
       - name: Check WhatsApp
         if: steps.trial.outputs.active == 'true' && env.WHATSAPP_HEALTH_URL != ''
-        run: curl --fail --silent --show-error --max-time 30 "$WHATSAPP_HEALTH_URL/healthz"
+        run: curl --fail --silent --show-error --max-time 90 "$WHATSAPP_HEALTH_URL/healthz"
       - name: Check API
         if: steps.trial.outputs.active == 'true' && env.API_HEALTH_URL != ''
         run: curl --fail --silent --show-error --max-time 30 "$API_HEALTH_URL/healthz"

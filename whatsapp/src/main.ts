@@ -45,6 +45,7 @@ try {
   await lock.acquire();
   await sender.start();
 } catch {
+  process.stderr.write('WhatsApp startup failed.\n');
   process.exitCode = 1;
   await shutdown();
 }
