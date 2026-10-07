@@ -1,0 +1,8 @@
+packages:
+  - whatsapp
+  - web
+blockExoticSubdeps: false
+allowBuilds:
+  '@whiskeysockets/baileys': true
+  esbuild: true
+  protobufjs: true
