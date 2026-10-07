@@ -1,0 +1,20 @@
+tarea,etapa,inicio_iso8601,fin_iso8601,duracion_minutos,observaciones
+construccion-mvp-recordatorios,inicio,2026-10-07T13:00:00-06:00,,,Hora de inicio informada retrospectivamente por el usuario; desde este punto se llevará el registro cronológico; no se calculó duración
+documentar-mvp-recordatorios,antes,,,,No se inició medición antes de recibir la tarea; no se reconstruyó la duración
+documentar-mvp-recordatorios,durante,,,,No se inició medición de esta etapa; no se estimó la duración
+documentar-mvp-recordatorios,después,,,,No se inició medición de esta etapa; no se estimó la duración
+limpiar-comillas-markdown,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
+limpiar-comillas-markdown,durante,,,,No se inició medición de esta etapa; no se estimó la duración
+limpiar-comillas-markdown,después,,,,No se inició medición de esta etapa; no se estimó la duración
+revisar-alcance-mvp,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
+revisar-alcance-mvp,durante,,,,No se inició medición de esta etapa; no se estimó la duración
+revisar-alcance-mvp,después,,,,No se inició medición de esta etapa; no se estimó la duración
+persistencia-baileys-neon,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
+persistencia-baileys-neon,durante,,,,No se inició medición de esta etapa; no se estimó la duración
+persistencia-baileys-neon,después,,,,No se inició medición de esta etapa; no se estimó la duración
+url-render-whatsapp,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
+url-render-whatsapp,durante,,,,No se inició medición de esta etapa; no se estimó la duración
+url-render-whatsapp,después,,,,No se inició medición de esta etapa; no se estimó la duración
+mostrar-esquema-db,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
+mostrar-esquema-db,durante,,,,No se inició medición de esta etapa; no se estimó la duración
+mostrar-esquema-db,después,,,,No se inició medición de esta etapa; no se estimó la duración
