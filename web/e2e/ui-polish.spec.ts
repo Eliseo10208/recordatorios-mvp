@@ -102,6 +102,18 @@ test("@mobile reminder form labels keep space from hints and inputs", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.route("**/api/notification-settings/whatsapp", (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        available: true,
+        active: false,
+        masked_number: null,
+        consent_text: "Acepto recibir avisos",
+      }),
+    }),
+  );
   await page.goto("/dashboard");
   await page.getByRole("button", { name: "Añadir recordatorio" }).click();
   await expect(
