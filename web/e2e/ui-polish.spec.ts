@@ -98,6 +98,47 @@ test("@mobile main sections fit a narrow viewport", async ({ page }) => {
   }
 });
 
+test("reminder cards form three, two, and one columns as space narrows", async ({
+  page,
+}) => {
+  const scheduledAt = new Date(Date.now() + 3 * 86400_000).toISOString();
+  await page.route(/\/api\/reminders\?/, (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        items: ["Uno", "Dos", "Tres"].map((message, index) => ({
+          id: `grid-${index}`,
+          message,
+          local_date: "2026-10-11",
+          local_time: "13:00",
+          timezone: "America/Mexico_City",
+          scheduled_at_utc: scheduledAt,
+          status: "scheduled",
+          send_whatsapp: false,
+          whatsapp_status: null,
+        })),
+        next_cursor: null,
+      }),
+    }),
+  );
+  await page.goto("/dashboard");
+  await expect(page.locator(".reminder-grid .reminder-card")).toHaveCount(3);
+  for (const [width, columns] of [
+    [1280, 3],
+    [800, 2],
+    [375, 1],
+  ]) {
+    await page.setViewportSize({ width, height: 900 });
+    const layout = await page.locator(".reminder-grid").evaluate((grid) => ({
+      columns: getComputedStyle(grid).gridTemplateColumns.trim().split(/\s+/)
+        .length,
+      overflow: document.documentElement.scrollWidth > window.innerWidth,
+    }));
+    expect(layout).toEqual({ columns, overflow: false });
+  }
+});
+
 test("reminders recover from a failed load without showing an empty state", async ({
   page,
 }) => {

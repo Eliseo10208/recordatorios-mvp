@@ -1,0 +1,130 @@
+.status-tabs button {
+  padding-bottom: 10px;
+  white-space: nowrap;
+}
+.status-tabs button.active {
+  background: #edf6ef;
+}
+.reminder-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
+  align-items: stretch;
+  gap: 16px;
+}
+.reminder-grid .reminder-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 208px;
+  gap: 0;
+  border-color: var(--card-border, #e2e8df);
+  border-left: 5px solid var(--card-accent, #d5ddd4);
+  background: var(--card-bg, #fff);
+}
+.reminder-card--urgent {
+  --card-bg: #fff0ee;
+  --card-border: #f3d2cc;
+  --card-accent: #bc504b;
+  --badge-bg: #f9dcd8;
+  --badge-color: #8d302b;
+}
+.reminder-card--soon {
+  --card-bg: #fff7e5;
+  --card-border: #eadfbd;
+  --card-accent: #a77519;
+  --badge-bg: #f8e9be;
+  --badge-color: #755116;
+}
+.reminder-card--later {
+  --card-bg: #eef7ef;
+  --card-border: #d4e7d8;
+  --card-accent: #4c8965;
+  --badge-bg: #dcefe0;
+  --badge-color: #2d6748;
+}
+.reminder-card--neutral {
+  --card-bg: #fff;
+  --card-border: #e2e8df;
+  --card-accent: #c7d5cb;
+}
+.reminder-card-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.reminder-card-content > .item-meta:first-child,
+.reminder-card h3 {
+  padding-right: 50px;
+}
+.reminder-card h3,
+.reminder-channel {
+  overflow-wrap: anywhere;
+}
+.reminder-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: auto 0 8px;
+  padding-top: 12px;
+}
+.urgency-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--badge-bg);
+  color: var(--badge-color);
+  font-size: 12px;
+  font-weight: 700;
+}
+.card-icon-button {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--card-border, #d6e2d9);
+  border-radius: 12px;
+  background: #ffffffb8;
+  color: #276846;
+}
+.card-icon-button:hover {
+  background: white;
+  border-color: #75aa85;
+}
+.card-icon-button svg {
+  width: 21px;
+  height: 21px;
+}
+.whatsapp-actions {
+  align-items: center;
+  margin-top: 24px;
+}
+.whatsapp-actions button {
+  min-height: 44px;
+}
+@media (max-width: 520px) {
+  .status-tabs {
+    gap: 2px;
+  }
+  .status-tabs button {
+    padding-inline: 12px;
+    font-size: 14px;
+  }
+  .reminder-grid .reminder-card {
+    min-height: 180px;
+    padding: 18px;
+  }
+  .whatsapp-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .whatsapp-actions button {
+    width: 100%;
+  }
+}
