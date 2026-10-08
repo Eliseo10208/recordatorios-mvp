@@ -81,14 +81,19 @@ export function WhatsAppSettings({
       <h2 id="whatsapp-heading">Avisos por WhatsApp</h2>
       <p className="muted">El aviso dentro de la app seguirá disponible.</p>
       {destination?.active && (
-        <p role="status">Número activo: {destination.masked_number}</p>
+        <>
+          <p role="status">Número activo: {destination.masked_number}</p>
+          <p className="muted">
+            Para registrar otro número, desactiva el actual primero.
+          </p>
+        </>
       )}
       {!destination?.available && (
         <p className="notice">
           Este canal aún no está configurado en el servidor.
         </p>
       )}
-      {destination?.available && (
+      {destination?.available && !destination.active && (
         <form
           id="whatsapp-settings-form"
           className="reminder-form"
@@ -116,17 +121,17 @@ export function WhatsAppSettings({
             />
             {destination.consent_text}
           </label>
-          <div className="feedback-slot" aria-live="polite">
-            {error && (
-              <p role="alert" className="form-error">
-                {error}
-              </p>
-            )}
-          </div>
         </form>
       )}
+      <div className="feedback-slot" aria-live="polite">
+        {error && (
+          <p role="alert" className="form-error">
+            {error}
+          </p>
+        )}
+      </div>
       <div className="form-actions whatsapp-actions">
-        {destination?.available && (
+        {destination?.available && !destination.active && (
           <button
             type="submit"
             form="whatsapp-settings-form"

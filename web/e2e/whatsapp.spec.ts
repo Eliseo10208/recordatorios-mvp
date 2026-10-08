@@ -15,11 +15,24 @@ test("opt in, schedule a WhatsApp copy, and opt out", async ({ page }) => {
   await page.getByLabel(/Acepto recibir por WhatsApp/).check();
   await page.getByRole("button", { name: "Guardar número" }).click();
   await expect(page.getByText(/Número activo:.*5678/)).toBeVisible();
+  await expect(page.getByLabel("Número con código de país")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Guardar número" }),
+  ).toHaveCount(0);
+  await expect(page.getByText(/desactiva el actual primero/)).toBeVisible();
   const settings = await page.request.get(
     "/api/notification-settings/whatsapp",
   );
   expect(settings.status()).toBe(200);
   expect(await settings.text()).not.toContain(phone);
+  const replacement = await page.request.put(
+    "/api/notification-settings/whatsapp",
+    {
+      headers: { Origin: new URL(page.url()).origin },
+      data: { phone: "+525587654321", consent: true },
+    },
+  );
+  expect(replacement.status()).toBe(409);
   const rejected = await page.request.put(
     "/api/notification-settings/whatsapp",
     {
@@ -47,6 +60,11 @@ test("opt in, schedule a WhatsApp copy, and opt out", async ({ page }) => {
   await page.getByRole("button", { name: "WhatsApp", exact: true }).click();
   await page.getByRole("button", { name: "Desactivar WhatsApp" }).click();
   await expect(page.getByText(/Número activo:/)).toHaveCount(0);
+  await expect(page.getByLabel("Número con código de país")).toBeVisible();
+  await page.getByLabel("Número con código de país").fill("+525587654321");
+  await page.getByLabel(/Acepto recibir por WhatsApp/).check();
+  await page.getByRole("button", { name: "Guardar número" }).click();
+  await expect(page.getByText(/Número activo:.*4321/)).toBeVisible();
   const reminders = await page.request.get("/api/reminders");
   expect(reminders.status()).toBe(200);
   expect((await reminders.json()).items[0].send_whatsapp).toBe(false);

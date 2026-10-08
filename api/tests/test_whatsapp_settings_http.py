@@ -123,7 +123,7 @@ def test_reminder_opt_in_requires_active_destination(
     assert changed.json()["version"] == 2
 
 
-def test_change_preserves_future_opt_in_and_rate_limit(
+def test_new_number_requires_deactivation_and_preserves_future_opt_in(
     client: TestClient, monkeypatch
 ) -> None:
     monkeypatch.setenv("WHATSAPP_ENABLED", "true")
@@ -143,24 +143,45 @@ def test_change_preserves_future_opt_in_and_rate_limit(
     changed = client.put(
         path, headers=owner, json={"phone": "+525587654321", "consent": True}
     )
-    assert changed.status_code == 200
-    assert changed.json()["masked_number"].endswith("4321")
-    assert changed.json()["consent_text_version"] == "v1"
+    assert changed.status_code == 409
+    assert client.get(path, headers=owner).json()["masked_number"].endswith("5678")
     reminder = client.get(f"{BASE}/reminders/{created.json()['id']}", headers=owner)
     assert reminder.json()["send_whatsapp"] is True
+    assert reminder.json()["version"] == 1
     for _ in range(3):
         assert (
             client.put(
-                path, headers=owner, json={"phone": "+525587654321", "consent": True}
+                path, headers=owner, json={"phone": "+525512345678", "consent": True}
             ).status_code
             == 200
         )
     assert (
         client.put(
-            path, headers=owner, json={"phone": "+525587654321", "consent": True}
+            path, headers=owner, json={"phone": "+525512345678", "consent": True}
         ).status_code
         == 429
     )
+
+
+def test_owner_can_register_another_number_after_deactivation(
+    client: TestClient, monkeypatch
+) -> None:
+    monkeypatch.setenv("WHATSAPP_ENABLED", "true")
+    monkeypatch.setenv("WHATSAPP_PHONE_KEY", base64.b64encode(b"z" * 32).decode())
+    owner = auth(client, "wa-relink@example.com")
+    path = f"{BASE}/notification-settings/whatsapp"
+    assert (
+        client.put(
+            path, headers=owner, json={"phone": "+525512345678", "consent": True}
+        ).status_code
+        == 200
+    )
+    assert client.delete(path, headers=owner).status_code == 204
+    replacement = client.put(
+        path, headers=owner, json={"phone": "+525587654321", "consent": True}
+    )
+    assert replacement.status_code == 200
+    assert replacement.json()["masked_number"].endswith("4321")
 
 
 def test_phone_validation_and_disabled_channel(client: TestClient, monkeypatch) -> None:
