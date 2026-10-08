@@ -2,11 +2,11 @@
 
 ## 1. Propósito y alcance
 
-Este repositorio contiene una aplicación web pública de recordatorios construida para una prueba técnica. Debe ser fácil de instalar, revisar, probar, desplegar y mantener. Es un monorepositorio para el frontend, la API, el worker de programación, la integración de WhatsApp, las migraciones, los contratos y la documentación. No es una aplicación de notas: el flujo principal es programar un aviso y recibirlo dentro de la app, con Web Push y WhatsApp como entregas adicionales opcionales.
+Este repositorio contiene una aplicación web pública construida para una prueba técnica de notas y recordatorios. Debe ser fácil de instalar, revisar, probar, desplegar y mantener. Es un monorepositorio para el frontend, la API, el worker de programación, la integración de WhatsApp, las migraciones, los contratos y la documentación. El corte actual implementa recordatorios y copias opcionales por WhatsApp; las notas independientes y Web Push siguen pendientes.
 
 La IA se usa exclusivamente durante el desarrollo: análisis, planificación, programación, generación de pruebas y revisión. La aplicación desplegada no llama modelos, no usa RAG y no ejecuta agentes. **OpenAPI** es la especificación abierta y el contrato de la API; no es OpenAI ni implica una dependencia de IA.
 
-La definición funcional canónica está en [docs/specs/MVP_RECORDATORIOS.md](docs/specs/MVP_RECORDATORIOS.md). La decisión del emisor único está en [docs/adr/ADR-0001-whatsapp-centralizado.md](docs/adr/ADR-0001-whatsapp-centralizado.md). Si el código futuro contradice esos documentos, no cambies silenciosamente el comportamiento: actualiza la spec o crea un ADR con aprobación humana.
+La definición funcional canónica está en [docs/specs/MVP_RECORDATORIOS.md](docs/specs/MVP_RECORDATORIOS.md); el [esquema implementado](docs/ESQUEMA_IMPLEMENTADO.md) distingue las tablas actuales del diseño objetivo. La decisión del emisor único está en [docs/adr/ADR-0001-whatsapp-centralizado.md](docs/adr/ADR-0001-whatsapp-centralizado.md). Si el código futuro contradice esos documentos, no cambies silenciosamente el comportamiento: actualiza la spec o crea un ADR con aprobación humana.
 
 ## 2. Stack y destinos previstos
 

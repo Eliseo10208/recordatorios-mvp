@@ -1,6 +1,6 @@
 # MVP — Recordatorios multicanal
 
-- Estado: aprobado para planificación
+- Estado: diseño objetivo; implementación parcial
 - Fecha: 7 de octubre de 2026
 - Alcance: prueba técnica
 - IA en producción: no
@@ -12,8 +12,10 @@ siempre crea una notificación dentro de la app. Además puede mostrar una Web
 Push, si el usuario dio permiso, y enviar una copia por WhatsApp, si el usuario
 registró un número y activó ese canal.
 
-No es una aplicación de notas. Su valor consiste en entregar un aviso a la hora
-correcta, conservarlo en una bandeja propia y mostrar qué ocurrió en cada canal.
+El corte implementado se centró en recordatorios. Las notas independientes que
+pide la prueba técnica siguen pendientes; no deben presentarse como terminadas.
+El valor de este corte consiste en entregar un aviso a la hora correcta,
+conservarlo en una bandeja propia y mostrar qué ocurrió en cada canal.
 
 ### Jerarquía de canales
 
@@ -256,6 +258,10 @@ disco efímero del servicio. El objetivo de 60 segundos se mide durante la prueb
 no se promete como garantía del plan gratuito.
 
 ## 9. Modelo de datos mínimo
+
+Este diagrama describe el diseño objetivo e incluye Web Push, aún pendiente.
+Las tablas creadas por las migraciones actuales se documentan en
+[Esquema implementado](../ESQUEMA_IMPLEMENTADO.md).
 
 ```mermaid
 erDiagram
@@ -647,7 +653,7 @@ una conexión de cuenta de WhatsApp.
 
 ## 16. No objetivos
 
-- notas, carpetas, etiquetas o editor enriquecido;
+- carpetas, etiquetas o editor enriquecido;
 - IA, RAG, embeddings o agentes en producción;
 - recordatorios recurrentes o snooze;
 - email para avisos o campañas; sólo se permiten correos transaccionales de
@@ -677,7 +683,7 @@ Cada entrega debe producir un recorrido demostrable; no sólo tablas o endpoints
 ## 18. Definition of Done del MVP
 
 - [ ] Frontend, API, worker y servicio WhatsApp tienen despliegues documentados.
-- [ ] PostgreSQL está migrado y su esquema coincide con este documento.
+- [ ] PostgreSQL está migrado y coincide con el esquema implementado documentado.
 - [ ] El flujo crear → vencer → notificación interna funciona E2E.
 - [ ] Push degrada de forma segura.
 - [ ] WhatsApp usa el emisor central y números destino de usuarios con opt-in.

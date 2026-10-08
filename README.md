@@ -1,21 +1,29 @@
 # Recordatorios
 
 Aplicación web para programar recordatorios personales. Cada recordatorio crea
-un aviso dentro de la app y, de forma opcional, puede generar una notificación
-Web Push y una copia por WhatsApp.
+un aviso dentro de la app y puede enviar una copia por WhatsApp. Web Push está
+previsto, pero aún no se implementa.
 
 WhatsApp usa un único emisor conectado y administrado por el equipo.
 Los usuarios no conectan sus cuentas: sólo registran el número donde quieren
 recibir avisos y aceptan ese canal. El worker consume su contrato HTTP.
 
-## Estado
+## Estado de la entrega
 
-El emisor `whatsapp/`, la API y el worker están desplegados en Render. El
-frontend está publicado en [Vercel](https://recordatorios-web-one.vercel.app).
-Este corte integra registro, inicio de sesión, programación, bandeja interna y
-envíos de WhatsApp desde el worker.
-Web Push sigue pendiente. La verificación y recuperación por correo se preparan
-en `feature/account-email` y requieren la release `0.3.0` para producción.
+| Componente | URL pública | Comprobación del 8 de octubre de 2026 |
+|---|---|---|
+| Frontend | [Iniciar sesión](https://recordatorios-web-one.vercel.app/login) | La página respondió HTTP 200. |
+| API | [OpenAPI](https://recordatorios-api.onrender.com/docs) | `/readyz` y `/openapi.json` respondieron HTTP 200. |
+| Worker | [Salud](https://recordatorios-worker.onrender.com/healthz) | `/healthz` respondió 200, pero `/readyz` respondió 503. |
+| Emisor WhatsApp | [Disponibilidad](https://recordatorios-whatsapp-kxia.onrender.com/readyz) | `/readyz` respondió HTTP 200. |
+| PostgreSQL | Neon | La cadena de conexión es privada; el [esquema implementado](docs/ESQUEMA_IMPLEMENTADO.md) está documentado en el repo. |
+
+El código de `main` incluye cuentas con JWT, verificación y recuperación por
+correo, recordatorios, eliminación lógica, bandeja interna y despacho por
+WhatsApp. La verificación anterior confirma rutas y disponibilidad puntual;
+no prueba un envío real de correo ni la entrega de un mensaje nuevo. El worker
+necesita recuperar `/readyz=200` para acreditar la ejecución automática.
+**Notas independientes y Web Push aún no están implementados.**
 
 ## Flujo previsto del MVP
 
@@ -46,6 +54,7 @@ usa únicamente para apoyar el proceso de desarrollo.
 ## Documentación
 
 - [Especificación del MVP](docs/specs/MVP_RECORDATORIOS.md)
+- [Esquema de la base de datos implementada](docs/ESQUEMA_IMPLEMENTADO.md)
 - [ADR: WhatsApp centralizado](docs/adr/ADR-0001-whatsapp-centralizado.md)
 - [Contrato HTTP del emisor](docs/contracts/WHATSAPP_V1.md)
 - [Reglas para desarrollo asistido por IA](CLAUDE.md)
@@ -239,8 +248,10 @@ El servicio API ejecuta `app.main:app`; el worker ejecuta `app.worker_app:app`
 y consulta vencimientos cada diez segundos mientras esté activo. Ambos usan
 la conexión **directa** de Neon de `recordatorios_app`, nunca la credencial de
 migración. Antes de desplegar, crea un punto de recuperación en Neon, comprueba
-que `alembic_version` sea `0001_whatsapp`, aplica `0002`–`0004` una vez con
-`MIGRATION_DATABASE_URL` fuera de Render y verifica `0004_whatsapp_delivery`.
+la versión actual de `alembic_version` y aplica una sola vez las migraciones
+pendientes con `MIGRATION_DATABASE_URL` fuera de Render. El head del código
+actual es `0006_reminder_soft_delete`; compruébalo antes de desplegar el
+worker y confirma después `/readyz=200`.
 
 Después de migrar, ejecuta `api/scripts/provision_app_role.py` con
 `MIGRATION_DATABASE_URL` y `APP_DB_PASSWORD` aleatoria de al menos 32
@@ -270,7 +281,8 @@ tablas aditivas sin uso hasta revisión, sin ejecutar un downgrade destructivo.
 
 El proyecto `recordatorios-web` está conectado al repositorio de GitHub, sigue
 `main` para producción y usa `web/` como Root Directory, Next.js y Node 24.
-Su dominio público es `https://recordatorios-web-one.vercel.app`. Configura
+Su [pantalla de inicio de sesión](https://recordatorios-web-one.vercel.app/login)
+está publicada en `https://recordatorios-web-one.vercel.app`. Configura
 estas variables sólo en el entorno Production de Vercel:
 
 - `API_BASE_URL=https://recordatorios-api.onrender.com`
