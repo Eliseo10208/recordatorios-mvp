@@ -99,7 +99,23 @@ flowchart TD
 
 ## 6. Experiencia de usuario
 
-### 6.1 Primer acceso
+### 6.1 Cuenta y acceso
+
+El usuario crea una cuenta con correo y contraseña y puede usarla de inmediato.
+La API envía mediante Resend un enlace de verificación después de confirmar la
+creación de la cuenta, sin mantener abierta una transacción durante la llamada
+de red. La cuenta conserva el estado pendiente hasta que el usuario confirme
+el correo. Si el envío falla, puede solicitar un
+nuevo enlace sin crear otra cuenta. Si olvida la contraseña, solicita un enlace
+de recuperación al correo registrado y establece una nueva contraseña desde
+ese enlace. La respuesta a la solicitud es la misma exista o no la cuenta.
+
+El correo de recuperación demuestra posesión de la dirección en ese momento.
+Al usarlo, el enlace queda consumido, el correo queda verificado y se revocan
+las sesiones anteriores. Resend sólo transporta los mensajes: FastAPI genera,
+valida y consume los tokens. La API key nunca llega al navegador.
+
+### 6.2 Primer acceso
 
 El primer acceso no se bloquea con permisos ni integraciones:
 
@@ -116,7 +132,7 @@ Opcional:
 El permiso de Web Push sólo se solicita después de que el usuario pulse una
 acción que explique su beneficio.
 
-### 6.2 Crear recordatorio
+### 6.3 Crear recordatorio
 
 Campos mínimos:
 
@@ -145,7 +161,7 @@ America/Mexico_City
 
 Los canales opcionales nunca impiden guardar.
 
-### 6.3 Dashboard
+### 6.4 Dashboard
 
 - próximos recordatorios en orden cronológico;
 - recordatorios disparados y cancelados separados;
@@ -154,7 +170,7 @@ Los canales opcionales nunca impiden guardar.
 - acción principal “Añadir recordatorio”;
 - estados loading, vacío, error y éxito.
 
-### 6.4 Centro de notificaciones
+### 6.5 Centro de notificaciones
 
 - campana con contador de no leídas;
 - lista cronológica;
@@ -163,7 +179,7 @@ Los canales opcionales nunca impiden guardar.
 - persistencia entre sesiones y dispositivos;
 - polling corto en el MVP; WebSocket queda fuera del alcance.
 
-### 6.5 Configuración
+### 6.6 Configuración
 
 Tres bloques independientes:
 
@@ -174,7 +190,7 @@ Tres bloques independientes:
 
 ## 7. Pantallas
 
-- Registro e inicio de sesión.
+- Registro, verificación de correo, inicio de sesión y recuperación de contraseña.
 - Dashboard de recordatorios.
 - Nuevo recordatorio.
 - Detalle y edición.
@@ -245,6 +261,7 @@ no se promete como garantía del plan gratuito.
 erDiagram
     USERS ||--o{ REMINDERS : owns
     USERS ||--o{ REFRESH_SESSIONS : authenticates
+    USERS ||--o{ ACCOUNT_TOKENS : verifies
     USERS ||--o{ NOTIFICATIONS : receives
     USERS ||--o{ PUSH_SUBSCRIPTIONS : registers
     USERS ||--o| WHATSAPP_DESTINATIONS : configures
@@ -254,8 +271,11 @@ erDiagram
 
     USERS {
         uuid id PK
-        string email UK
+        string email
+        string email_normalized UK
         string password_hash
+        datetime email_verified_at
+        int auth_version
         datetime created_at
     }
 
@@ -266,6 +286,16 @@ erDiagram
         datetime created_at
         datetime expires_at
         datetime revoked_at
+    }
+
+    ACCOUNT_TOKENS {
+        uuid id PK
+        uuid user_id FK
+        string purpose
+        string token_hash UK
+        datetime created_at
+        datetime expires_at
+        datetime consumed_at
     }
 
     REMINDERS {
@@ -354,9 +384,17 @@ erDiagram
 
 Restricciones obligatorias:
 
+- users.email_normalized único; aplicar la misma normalización en registro,
+  login y recuperación, sin reglas específicas de un proveedor de correo;
+- account_tokens.purpose limitado a verify_email y reset_password; el token
+  original nunca se guarda, cada token expira y sólo puede consumirse una vez;
+- al cambiar la contraseña, incrementar users.auth_version y revocar todas las
+  refresh_sessions activas; los access JWT deben comprobar esa versión;
 - notifications.reminder_id único;
 - (reminder_id, channel, destination_key) único;
 - índice único parcial sobre phone_hash para destinos de WhatsApp activos;
+- los formatos mexicanos `+52` y `+521` con los mismos diez dígitos se
+  canonizan a `+52` antes de cifrar y calcular phone_hash;
 - índice parcial por scheduled_at_utc para recordatorios scheduled;
 - (session_id, key_type, key_id) único para las claves Signal;
 - request_key único para solicitudes HTTP de WhatsApp;
@@ -459,10 +497,6 @@ Reglas:
 - TLS y autenticación servidor a servidor;
 - timeout explícito;
 - payload limitado y validado;
-- para un móvil mexicano recibido como +52 y diez dígitos, whatsapp/ forma el
-  destinatario de WhatsApp con +521 y esos diez dígitos; un número ya recibido
-  como +521 no vuelve a modificarse, conforme al
-  [formato internacional de WhatsApp](https://faq.whatsapp.com/1294841057948784/);
 - Idempotency-Key obligatorio y persistido por whatsapp/;
 - si ocurre un timeout después de iniciar el envío, el resultado queda unknown
   y no se reintenta automáticamente, aunque exista la clave de idempotencia;
@@ -476,8 +510,13 @@ POST   /api/v1/auth/register
 POST   /api/v1/auth/login
 POST   /api/v1/auth/refresh
 POST   /api/v1/auth/logout
+POST   /api/v1/auth/verify-email
+POST   /api/v1/auth/resend-verification
+POST   /api/v1/auth/forgot-password
+POST   /api/v1/auth/reset-password
 
 GET    /api/v1/reminders
+POST   /api/v1/reminders/preview
 POST   /api/v1/reminders
 GET    /api/v1/reminders/{reminderId}
 PATCH  /api/v1/reminders/{reminderId}
@@ -499,17 +538,35 @@ DELETE /api/v1/notification-settings/whatsapp
 FastAPI valida identidad y ownership en cada operación. El cliente no envía un
 user_id que la API tome como autoridad.
 
+En el corte del núcleo, el formulario envía fecha local (`YYYY-MM-DD`), hora
+(`HH:mm`) y zona IANA. La vista previa y las escrituras calculan la hora UTC
+en la API. La creación exige `Idempotency-Key` UUID; edición y cancelación
+exigen la versión observada. Las listas usan cursor y como máximo 100 elementos
+por página. Este corte genera sólo notificaciones internas: Push y WhatsApp
+siguen sus entregas independientes.
+
 ## 14. Seguridad y privacidad
 
 - contraseña con Argon2id;
 - JWT corto y refresh token opaco, hasheado en PostgreSQL, rotatorio y revocable;
+- enlaces de verificación y recuperación con tokens aleatorios, de un solo uso,
+  con caducidad y guardados sólo como huellas; nunca incluirlos en logs;
+- respuesta indistinguible para correos existentes e inexistentes en solicitudes
+  de recuperación; límites de frecuencia por cuenta e IP;
+- cambio de contraseña revoca refresh tokens y versiones anteriores de access
+  JWT, e invalida los demás enlaces de recuperación pendientes;
+- Resend se usa sólo para correo transaccional de cuenta. Su API key queda en
+  Render como RESEND_API_KEY. El remitente RESEND_FROM_EMAIL usa una dirección
+  del dominio cuya verificación de envío confirmó el usuario; no se fija una
+  dirección ni una clave real en el repositorio;
 - cookie HttpOnly, Secure y SameSite=Lax;
 - autorización por usuario en todas las consultas;
 - validación de fecha futura, longitud, zona IANA y teléfono E.164;
 - fecha y versión del opt-in de WhatsApp;
 - número cifrado en base, enmascarado en UI y ausente de logs;
 - claves VAPID, token entre servicios y sesión Baileys sólo como secretos;
-- rate limits para autenticación, cambios de número y despacho;
+- rate limits para autenticación, verificación y recuperación, cambios de número
+  y despacho;
 - llamadas salientes con timeout y sin transacciones abiertas;
 - ningún log contiene JWT, cookies, números completos o cuerpos de recordatorios;
 - no se envían campañas, broadcasts ni mensajes sin consentimiento.
@@ -523,6 +580,13 @@ una conexión de cuenta de WhatsApp.
 ### Núcleo
 
 - [ ] El usuario puede registrarse, iniciar sesión, renovar sesión y salir.
+- [ ] El registro permite usar la cuenta de inmediato y deja pendiente la
+      verificación del correo hasta consumir un enlace válido.
+- [ ] El usuario puede solicitar y reenviar un enlace de verificación.
+- [ ] Puede recuperar una contraseña olvidada mediante un enlace de un solo
+      uso enviado por Resend, sin revelar si existe la cuenta.
+- [ ] Tras restablecer la contraseña, las sesiones y enlaces anteriores dejan
+      de funcionar.
 - [ ] Sólo puede consultar y modificar sus propios datos.
 - [ ] Puede crear un recordatorio con mensaje, fecha, hora y zona horaria.
 - [ ] Una fecha pasada se rechaza.
@@ -546,6 +610,8 @@ una conexión de cuenta de WhatsApp.
 - [ ] El producto funciona completamente sin WhatsApp.
 - [ ] El usuario sólo registra un número destino y nunca conecta una cuenta.
 - [ ] El número se normaliza, cifra y muestra enmascarado.
+- [ ] `+52` y `+521` con los mismos diez dígitos mexicanos ocupan un único
+  destino activo; el worker envía el formato canónico `+52`.
 - [ ] Un número activo no puede registrarse en dos cuentas a la vez.
 - [ ] Desactivar un número permite registrarlo en otra cuenta.
 - [ ] Se registra el opt-in antes de habilitar el canal.
@@ -571,8 +637,9 @@ una conexión de cuenta de WhatsApp.
 - notas, carpetas, etiquetas o editor enriquecido;
 - IA, RAG, embeddings o agentes en producción;
 - recordatorios recurrentes o snooze;
-- recuperación de contraseña por correo;
-- email o SMS;
+- email para avisos o campañas; sólo se permiten correos transaccionales de
+  cuenta mediante Resend;
+- SMS;
 - calendarios externos;
 - colaboración o recordatorios compartidos;
 - app móvil nativa;
@@ -585,7 +652,8 @@ una conexión de cuenta de WhatsApp.
 
 ## 17. Entregas verticales
 
-1. **Fundación:** monorepo, CI, auth, PostgreSQL y migraciones.
+1. **Fundación:** monorepo, CI, registro, verificación y recuperación por
+   correo, auth, PostgreSQL y migraciones.
 2. **Núcleo:** CRUD, worker, bandeja interna y zonas horarias.
 3. **Push:** PWA, permisos, suscripciones y revocación.
 4. **WhatsApp:** número destino, opt-in, contrato HTTP y ledger.
@@ -602,6 +670,8 @@ Cada entrega debe producir un recorrido demostrable; no sólo tablas o endpoints
 - [ ] WhatsApp usa el emisor central y números destino de usuarios con opt-in.
 - [ ] Reinicios, concurrencia y retries no producen duplicados conocidos.
 - [ ] Auth, ownership, PII y secretos tienen pruebas negativas.
+- [ ] Verificación y recuperación por correo tienen pruebas de caducidad,
+      consumo único, respuesta genérica, límites y revocación de sesiones.
 - [ ] CI valida formato, lint, tipos, pruebas, migraciones y builds.
 - [ ] README, OpenAPI, ERD, .env.example y runbooks están sincronizados.
 - [ ] La aplicación desplegada no ejecuta IA.

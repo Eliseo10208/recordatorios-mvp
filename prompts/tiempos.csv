@@ -20,12 +20,24 @@ mostrar-esquema-db,durante,,,,No se inició medición de esta etapa; no se estim
 mostrar-esquema-db,después,,,,No se inició medición de esta etapa; no se estimó la duración
 implementar-mvp-gitflow,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
 implementar-mvp-gitflow,durante,,,,No se inició medición al comenzar la implementación; no se estimó la duración
-whatsapp-destination,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
-whatsapp-destination,durante,,,,No se inició medición de esta etapa; no se estimó la duración
-whatsapp-destination,después,,,,No se inició medición de esta etapa; no se estimó la duración
-release-whatsapp-011,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
-release-whatsapp-011,durante,,,,No se inició medición de esta etapa; no se estimó la duración
-release-whatsapp-011,después,,,,No se inició medición de esta etapa; no se estimó la duración
-whatsapp-uptime,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
-whatsapp-uptime,durante,,,,No se inició medición de esta etapa; no se estimó la duración
-whatsapp-uptime,después,,,,No se inició medición de esta etapa; no se estimó la duración
+configurar-remitente-resend,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
+configurar-remitente-resend,durante,,,,No se inició medición de esta etapa; no se estimó la duración
+configurar-remitente-resend,después,,,,No se inició medición de esta etapa; no se estimó la duración
+limite-lineas-tests,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
+limite-lineas-tests,durante,,,,No se inició medición de esta etapa; no se estimó la duración
+limite-lineas-tests,después,,,,No se inició medición de esta etapa; no se estimó la duración
+clean-api-web-skill,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
+clean-api-web-skill,durante,,,,No se inició medición de esta etapa; no se estimó la duración
+clean-api-web-skill,después,,,,No se inició medición de esta etapa; no se estimó la duración
+auth-tdd,antes,,,,No se inició medición antes de recibir la tarea; no se reconstruyó la duración
+auth-tdd,durante,,,,No se inició medición de la implementación; no se estimó la duración
+auth-tdd,después,2026-10-07T17:00:09-06:00,2026-10-07T17:07:55-06:00,7.77,Validación final medida con reloj local; pruebas y parada del contenedor de prueba
+reminders-core-tdd,antes,,,,No se separó una medición de lectura y preparación; no se estimó la duración
+reminders-core-tdd,durante,2026-10-07T17:51:52-06:00,2026-10-07T18:04:42-06:00,12.83,Implementación y primeros ciclos TDD medidos en esta sesión
+reminders-core-tdd,después,2026-10-07T18:04:42-06:00,2026-10-07T18:09:53-06:00,5.18,Validación final medida con reloj local; migración desde base vacía y cierre del contenedor de prueba
+whatsapp-tdd,antes,,,,No se separó una medición de lectura inicial; no se estimó la duración
+whatsapp-tdd,durante,2026-10-07T18:26:45-06:00,2026-10-07T18:42:28-06:00,15.72,Ventana total observada de implementación y validación; incluye preparación y cierre porque no se midieron por separado
+whatsapp-tdd,después,,,,Prueba real y revisión independiente pendientes; no se inventó una duración
+api-whatsapp-deploy,antes,,,,No se inició una medición separada; no se reconstruyó la duración
+api-whatsapp-deploy,durante,,,,No se inició una medición separada; no se estimó la duración
+api-whatsapp-deploy,después,,,,Validación local terminada; revisión y despliegue pendientes; no se inventó la duración

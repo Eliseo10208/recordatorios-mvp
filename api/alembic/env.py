@@ -6,14 +6,21 @@ import os
 from logging.config import fileConfig
 from urllib.parse import urlsplit
 
-from alembic import context
 from sqlalchemy import create_engine, pool
+
+from alembic import context
+from app.db import Base
 
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
-target_metadata = None
+target_metadata = Base.metadata
+_WHATSAPP_TABLES = {"baileys_auth", "baileys_signal_keys", "whatsapp_send_requests"}
+
+
+def include_name(name: str | None, type_: str, _parent_names: dict[str, str]) -> bool:
+    return not (type_ == "table" and name in _WHATSAPP_TABLES)
 
 
 def database_url() -> str:
@@ -27,7 +34,12 @@ def database_url() -> str:
 
 
 def run_migrations_offline() -> None:
-    context.configure(url=database_url(), target_metadata=target_metadata, literal_binds=True)
+    context.configure(
+        url=database_url(),
+        target_metadata=target_metadata,
+        include_name=include_name,
+        literal_binds=True,
+    )
     with context.begin_transaction():
         context.run_migrations()
 
@@ -35,7 +47,11 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     engine = create_engine(database_url(), poolclass=pool.NullPool)
     with engine.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            include_name=include_name,
+        )
         with context.begin_transaction():
             context.run_migrations()
     engine.dispose()

@@ -14,6 +14,10 @@ La definición funcional canónica está en [docs/specs/MVP_RECORDATORIOS.md](do
 - API: FastAPI, Pydantic 2 y Python 3.13.
 - Persistencia: PostgreSQL, SQLAlchemy 2 y Alembic.
 - Autenticación: Auth.js como límite de sesión web; FastAPI emite y valida JWT y es la autoridad de identidad y permisos.
+- Correo de cuenta: Resend para verificación posterior al registro y recuperación
+  de contraseña. FastAPI controla tokens de un solo uso y conserva la autoridad
+  de identidad. El remitente se configura mediante RESEND_FROM_EMAIL con una
+  dirección del dominio verificado; RESEND_API_KEY permanece sólo en el backend.
 - Programación: worker Python durable que reclama recordatorios vencidos desde PostgreSQL; no depende de timers del navegador ni de BackgroundTasks.
 - Recordatorios por WhatsApp: un único servicio whatsapp/ en TypeScript/Node.js con [Baileys](https://github.com/WhiskeySockets/Baileys), conectado y administrado por el equipo, dentro del monorepositorio y desplegado por separado de FastAPI. Cada usuario sólo registra su número destino y consentimiento. El backend Python consume el contrato HTTP del servicio; Baileys no se instala en api/ ni en web/.
 - Despliegue previsto: Vercel para el frontend; API, worker y servicio WhatsApp como procesos independientes en Render; y Neon para PostgreSQL.
@@ -274,11 +278,18 @@ Una migración creada debe aplicarse localmente antes de la entrega. El autogene
 ## 14. Autenticación y seguridad
 
 - Contraseñas con Argon2id; nunca cifrado reversible.
+- El registro permite acceso inmediato y verificación posterior del correo.
+  Verificación y recuperación usan Resend con tokens aleatorios, caducidad y
+  consumo único; sólo se guardan sus huellas. No revelar si una dirección existe
+  al solicitar recuperación.
+- Restablecer contraseña revoca refresh sessions y los access JWT anteriores;
+  la API debe validar una versión de autenticación del usuario.
 - Access JWT corto y refresh token opaco, hasheado, rotatorio y revocable.
 - Firma RS256 con kid, allowlist de algoritmo y rotación documentada. Validar iss, aud, exp, iat, jti y sujeto.
 - Cookie web HttpOnly, Secure y SameSite=Lax. Proteger mutaciones por cookie contra CSRF y validar Origin.
 - CORS con una lista exacta de orígenes; nunca permitir todos los orígenes con credenciales.
-- Rate limiting distribuido en registro, login y refresh.
+- Rate limiting distribuido en registro, login, refresh, verificación y
+  recuperación de contraseña.
 - No registrar passwords, tokens, cookies, bodies completos ni PII.
 - Los archivos .env.example contienen sólo nombres y valores ficticios. Secretos en GitHub Environments, Vercel y Render; WHATSAPP_API_URL, la credencial entre servicios y la sesión de Baileys sólo existen en los entornos que las necesitan. El número destino de un usuario es PII: se cifra en reposo, se enmascara en UI y logs y no forma parte de métricas.
 - Cuentas demo sólo con datos sintéticos.
