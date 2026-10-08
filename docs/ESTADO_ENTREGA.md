@@ -56,6 +56,10 @@ emisor** desde la web. `whatsapp/` usa la sesión fija `central-sender`; el QR
 de `pnpm pair` es una operación local del equipo. El número de usuario es sólo
 el destino que recibe la copia. Tampoco existe verificación de propiedad por
 OTP, así que el consentimiento por casilla no demuestra control del número.
+Otro desarrollador puede vincular **su teléfono como nuevo emisor central** en
+una instalación propia, o reemplazar el emisor de una instalación existente
+tras retirar la sesión anterior. El procedimiento y sus límites están en
+[WHATSAPP_EMISOR.md](operacion/WHATSAPP_EMISOR.md).
 
 La eliminación lógica de `0006_reminder_soft_delete` oculta el recordatorio y sus
 avisos al usuario, conserva las filas y cancela intentos de WhatsApp pendientes.
@@ -95,6 +99,9 @@ Las notas siguen siendo una brecha funcional de la entrega.
 
 - Para desarrollar localmente, sigue [README.md](../README.md) y los ejemplos
   `api/.env.example`, `web/.env.example` y `whatsapp/.env.example`.
+- Para configurar servicios de otro desarrollador, consulta las guías de
+  [WhatsApp](operacion/WHATSAPP_EMISOR.md), [Resend](operacion/RESEND.md) y
+  [Neon](operacion/NEON.md).
 - CI define jobs para líneas de fuente, API/web con PostgreSQL y E2E, y
   WhatsApp. El estado de cada ejecución se consulta en
   [GitHub Actions](https://github.com/Eliseo10208/recordatorios-mvp/actions).
