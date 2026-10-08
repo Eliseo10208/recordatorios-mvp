@@ -19,11 +19,13 @@ function initialClock() {
 export function ReminderForm({
   initial,
   whatsappAvailable,
+  whatsappState,
   onSaved,
   onClose,
 }: {
   initial?: Reminder;
   whatsappAvailable: boolean;
+  whatsappState: "loading" | "ready" | "error";
   onSaved: (reminder: Reminder) => void;
   onClose: () => void;
 }) {
@@ -40,13 +42,20 @@ export function ReminderForm({
       "UTC",
   );
   const [preview, setPreview] = useState<Preview | null>(null);
+  const [previewState, setPreviewState] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const key = useRef<{ fingerprint: string; value: string } | null>(null);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     let active = true;
-    if (!localDate || !localTime || !timezone) return;
+    const reset = window.setTimeout(() => setPreviewState("loading"), 0);
+    if (!localDate || !localTime || !timezone) {
+      return () => window.clearTimeout(reset);
+    }
     const timer = window.setTimeout(async () => {
       try {
         const response = await authenticatedFetch("/api/reminders/preview", {
@@ -61,23 +70,37 @@ export function ReminderForm({
         if (!active) return;
         if (!response.ok) {
           setError("Elige una fecha futura y una zona horaria válida.");
+          setPreviewState("error");
           return;
         }
         setPreview((await response.json()) as Preview);
+        setPreviewState("ready");
         setError("");
       } catch {
-        if (active) setError("No se pudo calcular la hora del aviso.");
+        if (active) {
+          setError("No se pudo calcular la hora del aviso.");
+          setPreviewState("error");
+        }
       }
     }, 300);
     return () => {
       active = false;
+      window.clearTimeout(reset);
       window.clearTimeout(timer);
     };
   }, [localDate, localTime, timezone]);
 
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!preview || !message.trim() || message.trim().length > 280) return;
+    if (
+      savingRef.current ||
+      !preview ||
+      previewState !== "ready" ||
+      !message.trim() ||
+      message.trim().length > 280
+    )
+      return;
+    savingRef.current = true;
     setSaving(true);
     setError("");
     const body = {
@@ -117,6 +140,7 @@ export function ReminderForm({
     } catch {
       setError("No se pudo contactar al servicio. Inténtalo de nuevo.");
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
   }
@@ -144,7 +168,17 @@ export function ReminderForm({
         />
         Enviar también una copia por WhatsApp
       </label>
-      {!whatsappAvailable && (
+      {whatsappState === "loading" && (
+        <span className="field-hint" role="status">
+          Consultando disponibilidad de WhatsApp…
+        </span>
+      )}
+      {whatsappState === "error" && (
+        <span className="field-hint">
+          No se pudo comprobar WhatsApp. Revisa la sección WhatsApp.
+        </span>
+      )}
+      {whatsappState === "ready" && !whatsappAvailable && (
         <span className="field-hint">
           Configura tu número en WhatsApp para activar este canal.
         </span>
@@ -187,35 +221,54 @@ export function ReminderForm({
         }}
         required
       />
-      {preview && (
-        <div className="schedule-preview" role="status">
-          <strong>
-            Te avisaremos el {preview.local_date} a las {preview.local_time}
-          </strong>
-          <span>
-            {preview.timezone} · Dentro de la app
-            {sendWhatsApp ? " y por WhatsApp" : ""}
-          </span>
-          {preview.resolution === "gap_forward" && (
+      <div className="preview-slot" aria-live="polite">
+        {previewState === "loading" && (
+          <div className="schedule-preview" role="status">
+            Calculando horario…
+          </div>
+        )}
+        {previewState === "ready" && preview && (
+          <div className="schedule-preview" role="status">
+            <strong>
+              Te avisaremos el {preview.local_date} a las {preview.local_time}
+            </strong>
             <span>
-              La hora elegida no existe; se ajustó al primer instante válido.
+              {preview.timezone} · Dentro de la app
+              {sendWhatsApp ? " y por WhatsApp" : ""}
             </span>
-          )}
-          {preview.resolution === "overlap_later" && (
-            <span>Esta hora ocurre dos veces; se usará la segunda.</span>
-          )}
-        </div>
-      )}
-      {error && (
-        <p className="form-error" role="alert">
-          {error}
-        </p>
-      )}
+            {preview.resolution === "gap_forward" && (
+              <span>
+                La hora elegida no existe; se ajustó al primer instante válido.
+              </span>
+            )}
+            {preview.resolution === "overlap_later" && (
+              <span>Esta hora ocurre dos veces; se usará la segunda.</span>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="feedback-slot" aria-live="polite">
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
       <div className="form-actions">
-        <button type="button" className="secondary-button" onClick={onClose}>
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={onClose}
+          disabled={saving}
+        >
           Volver
         </button>
-        <button type="submit" disabled={!preview || !message.trim() || saving}>
+        <button
+          type="submit"
+          disabled={
+            !preview || previewState !== "ready" || !message.trim() || saving
+          }
+        >
           {saving
             ? "Guardando…"
             : initial

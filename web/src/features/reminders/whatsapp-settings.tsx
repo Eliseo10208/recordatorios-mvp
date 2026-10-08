@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 import type { components } from "@/lib/api-types";
 import { authenticatedFetch } from "@/lib/reminder-client";
@@ -19,11 +19,13 @@ export function WhatsAppSettings({
   const [phone, setPhone] = useState("");
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
   const [error, setError] = useState("");
 
   async function save(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!consent) return;
+    if (!consent || busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
     setError("");
     try {
@@ -44,11 +46,14 @@ export function WhatsAppSettings({
         "No se pudo guardar el número. Revisa el formato E.164 y vuelve a intentarlo.",
       );
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
 
   async function disable() {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setBusy(true);
     setError("");
     try {
@@ -65,6 +70,7 @@ export function WhatsAppSettings({
     } catch {
       setError("No se pudo desactivar WhatsApp. Inténtalo de nuevo.");
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
@@ -91,6 +97,7 @@ export function WhatsAppSettings({
             autoComplete="tel"
             placeholder="+525512345678"
             value={phone}
+            disabled={busy}
             onChange={(event) => setPhone(event.target.value)}
             required
           />
@@ -99,19 +106,22 @@ export function WhatsAppSettings({
               id="whatsapp-consent"
               type="checkbox"
               checked={consent}
+              disabled={busy}
               onChange={(event) => setConsent(event.target.checked)}
               required
             />
             {destination.consent_text}
           </label>
-          {error && (
-            <p role="alert" className="form-error">
-              {error}
-            </p>
-          )}
+          <div className="feedback-slot" aria-live="polite">
+            {error && (
+              <p role="alert" className="form-error">
+                {error}
+              </p>
+            )}
+          </div>
           <div className="form-actions">
             <button type="submit" disabled={busy || !consent}>
-              Guardar número
+              {busy ? "Guardando…" : "Guardar número"}
             </button>
             {destination.active && (
               <button
@@ -126,7 +136,12 @@ export function WhatsAppSettings({
           </div>
         </form>
       )}
-      <button type="button" className="secondary-button" onClick={onClose}>
+      <button
+        type="button"
+        className="secondary-button"
+        onClick={onClose}
+        disabled={busy}
+      >
         Volver
       </button>
     </section>

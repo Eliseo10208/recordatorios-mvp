@@ -1,0 +1,144 @@
+.brand-mark,
+.empty-state-mark {
+  display: inline-block;
+  flex: none;
+  width: 21px;
+  height: 21px;
+  border: 3px solid #4b9273;
+  border-radius: 6px;
+  transform: rotate(45deg);
+  background: linear-gradient(135deg, #eaf4ec 50%, #4b9273 50%);
+}
+.empty-state-mark {
+  width: 30px;
+  height: 30px;
+  margin: 0 auto 12px;
+}
+.dashboard-header,
+.dashboard-content,
+.section-heading,
+.reminder-item,
+.panel {
+  min-width: 0;
+}
+.dashboard-nav {
+  gap: 5px;
+}
+.dashboard-nav .text-button {
+  min-height: 44px;
+  padding: 10px 13px;
+  border-radius: 10px;
+  white-space: normal;
+  text-align: center;
+}
+.dashboard-nav .text-button:hover,
+.dashboard-nav .text-button.active {
+  background: #eaf4ec;
+  color: #285f47;
+}
+.dashboard-nav .text-button.active {
+  box-shadow: inset 0 -3px #4b9273;
+}
+.status-tabs {
+  overflow: visible;
+  flex-wrap: wrap;
+}
+.status-tabs button {
+  min-height: 44px;
+  border-radius: 8px 8px 0 0;
+}
+.status-tabs button:hover,
+.status-tabs button.active {
+  background: #eaf4ec;
+}
+.reminder-item > div:first-child {
+  min-width: 0;
+}
+.reminder-item h3,
+.reminder-item p,
+.panel p,
+.notice {
+  overflow-wrap: anywhere;
+}
+.feedback-slot {
+  min-height: 20px;
+}
+.preview-slot {
+  min-height: 113px;
+}
+.loading-state {
+  min-height: 240px;
+}
+.loading-state > p {
+  margin: 0 0 12px;
+}
+.loading-card {
+  display: grid;
+  gap: 12px;
+  min-height: 94px;
+  padding: 20px 24px;
+  border: 1px solid #e2e8df;
+  border-radius: 17px;
+  background: #fff;
+}
+.loading-line {
+  display: block;
+  width: 100%;
+  height: 10px;
+  border-radius: 6px;
+  background: #e8eee7;
+}
+.loading-line.short {
+  width: 28%;
+}
+.loading-line.medium {
+  width: 58%;
+}
+.inline-feedback {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+  margin: 12px 0;
+  border-radius: 12px;
+  background: #fff0ed;
+  color: #8f3030;
+}
+.inline-feedback p {
+  margin: 0;
+}
+@media (max-width: 720px) {
+  .dashboard-header {
+    align-items: stretch;
+  }
+  .dashboard-nav {
+    width: 100%;
+  }
+  .dashboard-nav .text-button {
+    flex: 1 1 45%;
+  }
+  .section-heading > button {
+    min-height: 44px;
+  }
+  .reminder-item {
+    gap: 10px;
+  }
+}
+@media (max-width: 520px) {
+  .status-tabs button {
+    flex: 1 1 30%;
+    padding: 11px 5px;
+  }
+  .dashboard-nav .text-button {
+    font-size: 14px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+  }
+}

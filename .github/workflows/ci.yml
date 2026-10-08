@@ -70,7 +70,7 @@ jobs:
       - run: pnpm --filter @recordatorios/web typecheck
       - run: pnpm --filter @recordatorios/web test
       - run: pnpm --filter @recordatorios/web build
-      - run: pnpm --filter @recordatorios/web exec playwright install chromium
+      - run: pnpm --filter @recordatorios/web exec playwright install --with-deps chromium webkit
       - run: uv run --frozen python -m scripts.run_auth_e2e
         working-directory: api
   whatsapp:
