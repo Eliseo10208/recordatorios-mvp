@@ -9,7 +9,6 @@ services:
     buildCommand: npm install -g pnpm@11.19.0 && pnpm install --frozen-lockfile && pnpm --filter @recordatorios/whatsapp build
     startCommand: pnpm --filter @recordatorios/whatsapp start
     healthCheckPath: /healthz
-    maxShutdownDelaySeconds: 30
     buildFilter:
       paths:
         - package.json
