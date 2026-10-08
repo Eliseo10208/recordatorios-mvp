@@ -16,9 +16,13 @@ En tiempos.csv, usa fechas ISO 8601 con zona horaria y minutos reales transcurri
 Los archivos `*-chats-recuperados.md` de `antes/`, `durante/` y `después/`
 reúnen 87 mensajes del usuario sobre esta prueba recuperados de 10 chats
 accesibles de Codex y ChatGPT. Otros 12 mensajes recuperados ya estaban
-transcritos en esta rama y no se repitieron. Cada entrada conserva fecha, chat
+transcritos en el repositorio y no se repitieron. Cada entrada conserva fecha, chat
 de origen y herramienta. Se omitieron envolturas automáticas del cliente y
 respuestas breves de confirmación; se redactaron correos, teléfonos y posibles
 claves y se normalizaron espacios al final de línea. El listado accesible no
 garantiza que abarque todo el historial de la cuenta, y los adjuntos visuales
 no se transcribieron.
+
+La actualización documental posterior a la integración de `main` se registró
+en `antes/2026-10-08-documentacion-completa.md`. No se atribuyeron prompts
+inexistentes a las etapas durante o después.

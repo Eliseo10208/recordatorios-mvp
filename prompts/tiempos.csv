@@ -62,3 +62,6 @@ integrar-eliminacion-main,después,,,,Preparación del PR; no se midió esta eta
 actualizar-documentacion-entrega,antes,,,,Lectura del repositorio y verificación de URLs; no se midió por separado
 actualizar-documentacion-entrega,durante,,,,Actualización de README esquema y registro de prompts; no se midió por separado
 actualizar-documentacion-entrega,después,,,,Comprobación de enlaces y diff; no se midió por separado
+documentacion-completa,antes,,,,Lectura de main PDF de la prueba y servicios; no se inició medición separada
+documentacion-completa,durante,,,,Actualización de documentos; no se inició medición separada
+documentacion-completa,después,,,,Validación documental; no se inició medición separada
