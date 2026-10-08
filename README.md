@@ -67,6 +67,7 @@ usa únicamente para apoyar el proceso de desarrollo.
 - [Preparar Neon y roles](docs/operacion/NEON.md)
 - [Reglas para desarrollo asistido por IA](CLAUDE.md)
 - [Registro de prompts y tiempos](prompts/README.md)
+- [Estimación retrospectiva hasta el despliegue](prompts/TIEMPOS_ESTIMADOS.md)
 
 ## Estructura y ejecución local
 
@@ -76,7 +77,7 @@ usa únicamente para apoyar el proceso de desarrollo.
 | `api/` | FastAPI, worker, modelos, migraciones y pruebas. |
 | `whatsapp/` | Emisor central con Baileys y pruebas de contrato. |
 | `docs/` | Estado de entrega, especificación, esquema, ADR y contrato. |
-| `prompts/` | Prompts reales por etapa y registro de tiempos medidos o no medidos. |
+| `prompts/` | Prompts reales; tiempos medidos y estimaciones retrospectivas separados. |
 
 Requiere Node.js 24, pnpm 11.19, Python 3.13, uv y PostgreSQL. Instala las
 dependencias desde la raíz con `pnpm install --frozen-lockfile` y desde `api/`

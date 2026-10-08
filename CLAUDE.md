@@ -136,7 +136,7 @@ Compara el resultado con la spec y los criterios de aceptación. Revisa caminos 
 - Ejecutar pruebas; nunca confiar sólo en la explicación del modelo.
 - Registrar en el PR qué herramienta se usó y qué decisiones tomó la persona.
 - Registrar en /prompts/antes/, /prompts/durante/ y /prompts/después/ los prompts reales utilizados en cada etapa, retirando secretos, tokens y datos personales e indicando cualquier redacción.
-- Registrar en /prompts/tiempos.csv la duración real de cada etapa; no estimar ni reconstruir tiempos que no se midieron.
+- Registrar en /prompts/tiempos.csv la duración real de cada etapa; no presentar estimaciones como mediciones. Si una persona pide una reconstrucción retrospectiva, guardarla por separado con fuentes, método, incertidumbre y la etiqueta «aproximada».
 - Corregir o rechazar propuestas innecesarias, inseguras o fuera de alcance.
 
 ### Prohibido
@@ -153,7 +153,7 @@ Los prompts de desarrollo no se empaquetan en Docker, el bundle web ni producci�
 
 ### Registro de prompts y tiempos
 
-/prompts/README.md define cómo documentar los prompts utilizados antes, durante y después de cada tarea. Guardar el texto realmente usado, la etapa y una referencia a la tarea; no sustituirlo por un prompt idealizado ni incluir instrucciones internas no compartibles. Completar /prompts/tiempos.csv al cerrar la tarea con tiempos medidos por etapa. Si una etapa no ocurrió o no se midió, registrarlo explícitamente sin inventar una duración.
+/prompts/README.md define cómo documentar los prompts utilizados antes, durante y después de cada tarea. Guardar el texto realmente usado, la etapa y una referencia a la tarea; no sustituirlo por un prompt idealizado ni incluir instrucciones internas no compartibles. Completar /prompts/tiempos.csv al cerrar la tarea con tiempos medidos por etapa. Si una etapa no ocurrió o no se midió, registrarlo explícitamente sin inventar una duración medida. Las aproximaciones solicitadas se conservan aparte en /prompts/tiempos_estimados.csv y se explican en /prompts/TIEMPOS_ESTIMADOS.md.
 
 ## 8. Comandos oficiales previstos
 
