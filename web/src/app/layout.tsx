@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 import "./ui-polish.css";
+import "./dashboard-refresh.css";
 
 export const metadata: Metadata = {
   title: "Recordatorios",
