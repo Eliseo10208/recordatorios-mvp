@@ -37,13 +37,14 @@ Dos personas pueden iniciar sesión en cuentas distintas de **Recordatorios** y
 guardar números receptores diferentes desde **Dashboard → WhatsApp**. La API
 obtiene el usuario de la sesión autenticada (`current_user`) y guarda un único
 destino por `user_id`. Un índice único impide que el mismo teléfono normalizado
-esté activo en dos cuentas. Si una persona cambia su número, el nuevo reemplaza
-al anterior; desactivarlo libera ese número para otra cuenta. El formulario
-requiere consentimiento y el backend limita los cambios a cinco por hora.
+esté activo en dos cuentas. Para usar otro número, primero se desactiva el
+actual y después se registra el nuevo; desactivarlo libera ese número para otra
+cuenta. El formulario requiere consentimiento y el backend limita los cambios
+a cinco por hora.
 
 Esta capacidad está cubierta por pruebas HTTP de aislamiento, conflicto,
-desactivación y cambio de destino. En esta revisión no se usaron dos cuentas
-reales en producción, por lo que no se confirma la configuración productiva
+desactivación y registro de otro destino. En esta revisión no se usaron dos
+cuentas reales en producción, por lo que no se confirma la configuración productiva
 de `WHATSAPP_ENABLED` y `WHATSAPP_PHONE_KEY`. El `readyz` del emisor sólo
 confirma la disponibilidad de la sesión central en ese instante.
 En una comprobación pública del 8 de octubre, `/register` respondió 200 y
