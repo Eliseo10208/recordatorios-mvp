@@ -100,8 +100,7 @@ def save_destination(
         row = WhatsAppDestination(user_id=user.id, status="active", version=1)
         db.add(row)
     elif row.status == "active" and row.phone_hash != digest:
-        _cancel_pending(db, user.id, row.phone_hash or "")
-        row.version += 1
+        raise AuthProblem(409, "Deactivate current number first")
     elif row.status != "active":
         row.version += 1
     row.phone_encrypted = encrypt(phone, encryption_key)

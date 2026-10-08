@@ -275,9 +275,9 @@ el consentimiento y pulsa **Guardar número**. Después puede activar
 configurado es un **destino receptor**, vinculado a su cuenta de la app; no es
 una sesión de WhatsApp ni convierte su teléfono en emisor.
 
-Cada cuenta admite un solo destino activo. Para cambiarlo, guarda otro número
-en esa misma pantalla; reemplaza el anterior y cancela los envíos pendientes
-al destino viejo. **Desactivar WhatsApp** elimina el número activo y quita la
+Cada cuenta admite un solo destino activo. Para usar otro número, primero pulsa
+**Desactivar WhatsApp** y después registra el nuevo. Un intento de reemplazo
+directo se rechaza. La desactivación cancela los envíos pendientes y quita la
 preferencia de los recordatorios programados. Dos cuentas pueden tener números
 distintos, pero el mismo número no puede estar activo en ambas: la segunda
 recibe un conflicto hasta que la primera lo desactive. Para México, `+52` y

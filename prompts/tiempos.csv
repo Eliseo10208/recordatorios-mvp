@@ -1,4 +1,7 @@
 tarea,etapa,inicio_iso8601,fin_iso8601,duracion_minutos,observaciones
+numero-whatsapp-activo,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
+numero-whatsapp-activo,durante,,,,No se midió esta etapa; no se estimó la duración
+numero-whatsapp-activo,después,,,,No se midió esta etapa; no se estimó la duración
 selector-zona-horaria,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
 selector-zona-horaria,durante,,,,No se midió esta etapa; no se estimó la duración
 selector-zona-horaria,después,,,,No se midió esta etapa; no se estimó la duración

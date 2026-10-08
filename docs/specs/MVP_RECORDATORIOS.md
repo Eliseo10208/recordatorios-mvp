@@ -46,12 +46,13 @@ Cada usuario sólo puede:
 1. registrar un número destino;
 2. aceptar recibir recordatorios por ese medio;
 3. activar o desactivar WhatsApp para cada recordatorio;
-4. cambiar o eliminar su número.
+4. desactivar su número antes de registrar otro.
 
 En el corte actual, otra persona puede crear su propia cuenta de la app y
 registrar un destino distinto. Esto no vincula una sesión personal de
 WhatsApp: todos los mensajes siguen saliendo del emisor central. Un destino
-activo no puede repetirse entre cuentas; cambiarlo reemplaza el anterior.
+activo no puede repetirse entre cuentas. Para usar otro número en la misma
+cuenta, primero se desactiva el actual y después se registra el nuevo.
 La [guía de uso y sus límites](../../README.md#número-de-cada-cuenta-de-la-app)
 explica el flujo implementado.
 
@@ -202,8 +203,8 @@ Tres bloques independientes:
 
 1. **Dentro de la app:** siempre activo.
 2. **Este dispositivo:** permiso y estado de la suscripción Web Push.
-3. **WhatsApp:** agregar, cambiar o desactivar el número destino y consultar el
-   consentimiento registrado.
+3. **WhatsApp:** agregar un número destino, desactivarlo antes de registrar otro
+   y consultar el consentimiento registrado.
 
 ## 7. Pantallas objetivo
 
@@ -663,7 +664,8 @@ prueba productiva haya pasado. La cobertura actual y sus límites están en
 - [ ] La sesión emisora y credenciales nunca llegan al navegador.
 - [ ] Tras reiniciar whatsapp/, una sesión aún válida se restaura desde Neon
       sin volver a vincular la cuenta; las claves Signal recientes se conservan.
-- [ ] Cambiar o desactivar el número evita nuevos envíos al destino anterior.
+- [ ] Reemplazar directamente un número activo se rechaza; desactivarlo evita
+  nuevos envíos al destino anterior y permite registrar otro número.
 - [ ] Un fallo o timeout de WhatsApp no afecta los otros canales.
 - [ ] La UI no llama “entregado” a una simple aceptación.
 
