@@ -11,6 +11,7 @@ import { ReminderDetail } from "@/features/reminders/reminder-detail";
 import { ReminderForm } from "@/features/reminders/reminder-form";
 import { useReminderFeed } from "@/features/reminders/use-reminder-feed";
 import { WhatsAppSettings } from "@/features/reminders/whatsapp-settings";
+import { timeZoneLabel } from "@/features/reminders/time-zones";
 import type { components } from "@/lib/api-types";
 import { authenticatedFetch } from "@/lib/reminder-client";
 
@@ -27,7 +28,7 @@ const labels: Record<Status, string> = {
 };
 
 function displayTime(item: Reminder): string {
-  return `${item.local_date} · ${item.local_time} · ${item.timezone}`;
+  return `${item.local_date} · ${item.local_time} · ${timeZoneLabel(item.timezone)}`;
 }
 
 function whatsappLabel(item: Reminder): string {

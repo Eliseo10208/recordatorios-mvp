@@ -164,6 +164,15 @@ test("@mobile reminder form labels keep space from hints and inputs", async ({
   expect(gaps.hintToDate).toBeGreaterThanOrEqual(12);
   expect(gaps.dateLabelToInput).toBeGreaterThanOrEqual(6);
   expect(gaps.timeLabelToInput).toBeGreaterThanOrEqual(6);
+
+  const zone = page.getByLabel("Zona horaria");
+  await expect(zone).toBeEnabled();
+  expect(await zone.evaluate((element) => element.tagName)).toBe("SELECT");
+  await page
+    .getByLabel("Fecha")
+    .fill(new Date(Date.now() + 3 * 86400_000).toISOString().slice(0, 10));
+  await zone.selectOption("Europe/Madrid");
+  await expect(page.locator(".schedule-preview")).toContainText("Madrid");
 });
 
 test("reminder cards form three, two, and one columns as space narrows", async ({

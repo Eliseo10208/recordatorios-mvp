@@ -20,7 +20,7 @@ test("create, edit, cancel, fire, and read an internal notice", async ({
   const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
   await page.getByLabel("Fecha").fill(tomorrow.toISOString().slice(0, 10));
   await page.getByLabel("Hora", { exact: true }).fill("12:00");
-  await page.getByLabel("Zona horaria IANA").fill("UTC");
+  await page.getByLabel("Zona horaria").selectOption("UTC");
   await expect(page.getByText(/Te avisaremos el/)).toBeVisible();
   await page.getByRole("button", { name: "Guardar recordatorio" }).click();
   await expect(
@@ -76,7 +76,7 @@ test("create, edit, cancel, fire, and read an internal notice", async ({
   await page
     .getByLabel("Hora", { exact: true })
     .fill(soon.toISOString().slice(11, 16));
-  await page.getByLabel("Zona horaria IANA").fill("UTC");
+  await page.getByLabel("Zona horaria").selectOption("UTC");
   await expect(page.getByText(/Te avisaremos el/)).toBeVisible();
   await page.getByRole("button", { name: "Guardar recordatorio" }).click();
   await expect(
@@ -111,7 +111,7 @@ test("create, edit, cancel, fire, and read an internal notice", async ({
     .fill("Ocultar recordatorio");
   await page.getByLabel("Fecha").fill(tomorrow.toISOString().slice(0, 10));
   await page.getByLabel("Hora", { exact: true }).fill("12:00");
-  await page.getByLabel("Zona horaria IANA").fill("UTC");
+  await page.getByLabel("Zona horaria").selectOption("UTC");
   await expect(page.getByText(/Te avisaremos el/)).toBeVisible();
   await page.getByRole("button", { name: "Guardar recordatorio" }).click();
   await page.getByRole("button", { name: "Eliminar recordatorio" }).click();

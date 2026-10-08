@@ -1,4 +1,7 @@
 tarea,etapa,inicio_iso8601,fin_iso8601,duracion_minutos,observaciones
+selector-zona-horaria,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
+selector-zona-horaria,durante,,,,No se midió esta etapa; no se estimó la duración
+selector-zona-horaria,después,,,,No se midió esta etapa; no se estimó la duración
 pixel-perfect-web,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
 pixel-perfect-web,durante,,,,No se midió esta etapa; no se estimó la duración
 pixel-perfect-web,después,,,,No se midió esta etapa; no se estimó la duración

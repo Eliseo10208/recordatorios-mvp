@@ -156,7 +156,7 @@ Campos mínimos:
 - mensaje, requerido, máximo 280 caracteres;
 - fecha;
 - hora;
-- zona horaria IANA detectada, visible y editable;
+- zona horaria detectada y visible, con selector de ciudades y zonas; el identificador IANA se conserva para la API;
 - interruptor “También por WhatsApp”, disponible cuando existe un número activo.
 
 Si la hora local elegida no existe por un cambio de horario, se ajusta al
