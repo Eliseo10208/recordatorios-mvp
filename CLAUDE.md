@@ -6,7 +6,7 @@ Este repositorio contiene una aplicación web pública construida para una prueb
 
 La IA se usa exclusivamente durante el desarrollo: análisis, planificación, programación, generación de pruebas y revisión. La aplicación desplegada no llama modelos, no usa RAG y no ejecuta agentes. **OpenAPI** es la especificación abierta y el contrato de la API; no es OpenAI ni implica una dependencia de IA.
 
-La definición funcional canónica está en [docs/specs/MVP_RECORDATORIOS.md](docs/specs/MVP_RECORDATORIOS.md); el [esquema implementado](docs/ESQUEMA_IMPLEMENTADO.md) distingue las tablas actuales del diseño objetivo. La decisión del emisor único está en [docs/adr/ADR-0001-whatsapp-centralizado.md](docs/adr/ADR-0001-whatsapp-centralizado.md). Si el código futuro contradice esos documentos, no cambies silenciosamente el comportamiento: actualiza la spec o crea un ADR con aprobación humana.
+La definición funcional canónica está en [docs/specs/MVP_RECORDATORIOS.md](docs/specs/MVP_RECORDATORIOS.md); el [estado de la entrega](docs/ESTADO_ENTREGA.md) distingue código, disponibilidad puntual y pendientes, y el [esquema implementado](docs/ESQUEMA_IMPLEMENTADO.md) distingue las tablas actuales del diseño objetivo. La decisión del emisor único está en [docs/adr/ADR-0001-whatsapp-centralizado.md](docs/adr/ADR-0001-whatsapp-centralizado.md). Si el código futuro contradice esos documentos, no cambies silenciosamente el comportamiento: actualiza la spec o crea un ADR con aprobación humana.
 
 ## 2. Stack y destinos previstos
 

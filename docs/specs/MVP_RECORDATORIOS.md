@@ -4,6 +4,12 @@
 - Fecha: 7 de octubre de 2026
 - Alcance: prueba técnica
 - IA en producción: no
+- App desplegada: [iniciar sesión](https://recordatorios-web-one.vercel.app/login)
+
+El estado verificable del corte entregado está en
+[Estado de la entrega](../ESTADO_ENTREGA.md). Las secciones de Web Push, PWA y
+suscripciones describen el objetivo de producto, no funciones disponibles en
+`main`. Las notas independientes solicitadas en la prueba siguen pendientes.
 
 ## 1. Definición del producto
 
@@ -73,7 +79,7 @@ o no haber sido configurado. La aplicación necesita:
 - evitar duplicados ante reinicios o reintentos;
 - explicar el resultado sin prometer estados que no puede comprobar.
 
-## 5. Flujo principal
+## 5. Flujo principal objetivo
 
 ```mermaid
 flowchart TD
@@ -117,7 +123,7 @@ Al usarlo, el enlace queda consumido, el correo queda verificado y se revocan
 las sesiones anteriores. Resend sólo transporta los mensajes: FastAPI genera,
 valida y consume los tokens. La API key nunca llega al navegador.
 
-### 6.2 Primer acceso
+### 6.2 Primer acceso objetivo
 
 El primer acceso no se bloquea con permisos ni integraciones:
 
@@ -131,8 +137,8 @@ Opcional:
 [ Agregar mi número de WhatsApp ]
 ```
 
-El permiso de Web Push sólo se solicita después de que el usuario pulse una
-acción que explique su beneficio.
+El permiso de Web Push sólo se solicitaría después de que el usuario pulse una
+acción que explique su beneficio. Esa acción aún no existe en la web actual.
 
 ### 6.3 Crear recordatorio
 
@@ -181,7 +187,7 @@ Los canales opcionales nunca impiden guardar.
 - persistencia entre sesiones y dispositivos;
 - polling corto en el MVP; WebSocket queda fuera del alcance.
 
-### 6.6 Configuración
+### 6.6 Configuración objetivo
 
 Tres bloques independientes:
 
@@ -190,7 +196,7 @@ Tres bloques independientes:
 3. **WhatsApp:** agregar, cambiar o desactivar el número destino y consultar el
    consentimiento registrado.
 
-## 7. Pantallas
+## 7. Pantallas objetivo
 
 - Registro, verificación de correo, inicio de sesión y recuperación de contraseña.
 - Dashboard de recordatorios.
@@ -202,7 +208,7 @@ Tres bloques independientes:
 Todas deben funcionar en móvil y escritorio, con teclado, foco visible, labels,
 mensajes anunciados y contraste WCAG 2.2 AA.
 
-## 8. Arquitectura
+## 8. Arquitectura objetivo
 
 ```mermaid
 flowchart LR
@@ -518,7 +524,11 @@ Reglas:
 - ningún endpoint de whatsapp/ se expone al navegador;
 - ninguna prueba ordinaria envía mensajes reales.
 
-## 13. API pública propuesta
+## 13. API pública
+
+Las rutas siguientes figuran en el
+[OpenAPI generado](../../api/openapi.json) de `main`. Los identificadores de
+la lista son descriptivos; el contrato usa `reminder_id` y `notification_id`.
 
 ```text
 POST   /api/v1/auth/register
@@ -529,6 +539,7 @@ POST   /api/v1/auth/verify-email
 POST   /api/v1/auth/resend-verification
 POST   /api/v1/auth/forgot-password
 POST   /api/v1/auth/reset-password
+GET    /api/v1/auth/me
 
 GET    /api/v1/reminders
 POST   /api/v1/reminders/preview
@@ -543,13 +554,14 @@ GET    /api/v1/notifications/unread-count
 POST   /api/v1/notifications/{notificationId}/read
 POST   /api/v1/notifications/read-all
 
-POST   /api/v1/push-subscriptions
-DELETE /api/v1/push-subscriptions/{subscriptionId}
-
 GET    /api/v1/notification-settings/whatsapp
 PUT    /api/v1/notification-settings/whatsapp
 DELETE /api/v1/notification-settings/whatsapp
 ```
+
+Las rutas `POST /api/v1/push-subscriptions` y
+`DELETE /api/v1/push-subscriptions/{subscriptionId}` pertenecen al diseño
+objetivo; no están implementadas ni aparecen en OpenAPI.
 
 FastAPI valida identidad y ownership en cada operación. El cliente no envía un
 user_id que la API tome como autoridad.
@@ -561,8 +573,8 @@ exigen la versión observada. `DELETE` también exige `expected_version` en JSON
 responde 204 al ocultar, 404 si no existe, es ajeno o ya se ocultó, y 409 ante
 versión obsoleta o estado `processing`. La clave de creación de un recordatorio
 oculto permanece reservada y su reutilización responde 409. Las listas usan
-cursor y como máximo 100 elementos por página. Este corte genera sólo
-notificaciones internas: Push y WhatsApp siguen sus entregas independientes.
+cursor y como máximo 100 elementos por página. La notificación interna es
+canónica; WhatsApp se despacha por separado. Push sigue pendiente.
 
 ## 14. Seguridad y privacidad
 
@@ -594,7 +606,11 @@ El MVP valida formato y consentimiento del número, pero no demuestra propiedad.
 Una verificación OTP puede añadirse después si el threat model lo exige; no es
 una conexión de cuenta de WhatsApp.
 
-## 15. Criterios de aceptación
+## 15. Criterios de aceptación del diseño objetivo
+
+Las casillas son criterios de la especificación, no una declaración de que una
+prueba productiva haya pasado. La cobertura actual y sus límites están en
+[Estado de la entrega](../ESTADO_ENTREGA.md).
 
 ### Núcleo
 
@@ -669,7 +685,7 @@ una conexión de cuenta de WhatsApp.
 - WebSockets;
 - garantía de entrega al segundo o exactly-once externo.
 
-## 17. Entregas verticales
+## 17. Entregas verticales previstas
 
 1. **Fundación:** monorepo, CI, registro, verificación y recuperación por
    correo, auth, PostgreSQL y migraciones.
@@ -678,7 +694,9 @@ una conexión de cuenta de WhatsApp.
 4. **WhatsApp:** número destino, opt-in, contrato HTTP y ledger.
 5. **Producción:** despliegues, secretos, observabilidad, E2E y rollback.
 
-Cada entrega debe producir un recorrido demostrable; no sólo tablas o endpoints.
+El código actual incluye fundación, núcleo y WhatsApp, con despliegues para
+web, API, worker y emisor. Push sigue pendiente. Cada entrega debe producir un
+recorrido demostrable; no sólo tablas o endpoints.
 
 ## 18. Definition of Done del MVP
 

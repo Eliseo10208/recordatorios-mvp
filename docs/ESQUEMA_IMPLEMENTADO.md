@@ -39,3 +39,17 @@ erDiagram
 No existen todavía tablas de notas ni de suscripciones Web Push. Para una
 instalación nueva se aplica `alembic upgrade head` con la credencial de
 migración; el head del código documentado es `0006_reminder_soft_delete`.
+
+## Evolución por migración
+
+| Migración | Cambio principal |
+|---|---|
+| `0001_whatsapp` | Almacén cifrado e idempotencia del emisor central. |
+| `0002_auth` | Usuarios, refresh sessions, aliases y límites de autenticación. |
+| `0003_reminders` | Recordatorios y notificaciones internas. |
+| `0004_whatsapp_delivery` | Destinos, intentos y límites de despacho. |
+| `0005_account_tokens` | Enlaces de verificación y recuperación de cuenta. |
+| `0006_reminder_soft_delete` | Marca `deleted_at` para ocultar recordatorios sin borrar filas. |
+
+El esquema se deriva del código de migraciones; no se verificó directamente la
+versión de la base productiva durante esta revisión documental.

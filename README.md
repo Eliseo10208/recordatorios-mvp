@@ -14,32 +14,35 @@ recibir avisos y aceptan ese canal. El worker consume su contrato HTTP.
 |---|---|---|
 | Frontend | [Iniciar sesión](https://recordatorios-web-one.vercel.app/login) | La página respondió HTTP 200. |
 | API | [OpenAPI](https://recordatorios-api.onrender.com/docs) | `/readyz` y `/openapi.json` respondieron HTTP 200. |
-| Worker | [Salud](https://recordatorios-worker.onrender.com/healthz) | `/healthz` respondió 200, pero `/readyz` respondió 503. |
+| Worker | [Disponibilidad](https://recordatorios-worker.onrender.com/readyz) | `/readyz` respondió HTTP 200. |
 | Emisor WhatsApp | [Disponibilidad](https://recordatorios-whatsapp-kxia.onrender.com/readyz) | `/readyz` respondió HTTP 200. |
 | PostgreSQL | Neon | La cadena de conexión es privada; el [esquema implementado](docs/ESQUEMA_IMPLEMENTADO.md) está documentado en el repo. |
 
 El código de `main` incluye cuentas con JWT, verificación y recuperación por
 correo, recordatorios, eliminación lógica, bandeja interna y despacho por
 WhatsApp. La verificación anterior confirma rutas y disponibilidad puntual;
-no prueba un envío real de correo ni la entrega de un mensaje nuevo. El worker
-necesita recuperar `/readyz=200` para acreditar la ejecución automática.
+no prueba un envío real de correo ni la entrega de un mensaje nuevo. El estado
+del worker puede cambiar; `/readyz=200` sólo confirma un ciclo reciente.
 **Notas independientes y Web Push aún no están implementados.**
 
-## Flujo previsto del MVP
+Consulta el [estado detallado de la entrega](docs/ESTADO_ENTREGA.md) para ver
+qué funciones están en el código, cuáles se comprobaron en producción y qué
+falta para cubrir el enunciado de la prueba.
+
+## Flujo implementado de recordatorios
 
 ```text
 crear recordatorio
   → guardarlo en PostgreSQL
   → worker reclama el vencimiento
   → crear notificación interna
-  → intentar Web Push si existe permiso
   → enviar { phone, message } al servicio WhatsApp si el usuario lo activó
 ```
 
-La notificación interna es la fuente de verdad. Un fallo de Push o WhatsApp no
-elimina el recordatorio ni la notificación de la app.
+La notificación interna es la fuente de verdad. Un fallo de WhatsApp no elimina
+el recordatorio ni la notificación de la app. Web Push sigue como diseño futuro.
 
-## Stack previsto
+## Stack de la entrega
 
 - Next.js, React y TypeScript para frontend y BFF.
 - FastAPI, Pydantic y Python para API y reglas de negocio.
@@ -54,11 +57,44 @@ usa únicamente para apoyar el proceso de desarrollo.
 ## Documentación
 
 - [Especificación del MVP](docs/specs/MVP_RECORDATORIOS.md)
+- [Estado de la entrega y cobertura de la prueba](docs/ESTADO_ENTREGA.md)
 - [Esquema de la base de datos implementada](docs/ESQUEMA_IMPLEMENTADO.md)
 - [ADR: WhatsApp centralizado](docs/adr/ADR-0001-whatsapp-centralizado.md)
 - [Contrato HTTP del emisor](docs/contracts/WHATSAPP_V1.md)
 - [Reglas para desarrollo asistido por IA](CLAUDE.md)
 - [Registro de prompts y tiempos](prompts/README.md)
+
+## Estructura y ejecución local
+
+| Ruta | Contenido |
+|---|---|
+| `web/` | Next.js, Auth.js, BFF y dashboard. |
+| `api/` | FastAPI, worker, modelos, migraciones y pruebas. |
+| `whatsapp/` | Emisor central con Baileys y pruebas de contrato. |
+| `docs/` | Estado de entrega, especificación, esquema, ADR y contrato. |
+| `prompts/` | Prompts reales por etapa y tiempos medidos. |
+
+Requiere Node.js 24, pnpm 11.19, Python 3.13, uv y PostgreSQL. Instala las
+dependencias desde la raíz con `pnpm install --frozen-lockfile` y desde `api/`
+con `uv sync --frozen`. Toma las variables necesarias de `api/.env.example` y
+`web/.env.example` y configúralas en el entorno de **cada proceso**; los
+comandos siguientes no cargan archivos `.env` automáticamente. Para una base
+local, usa conexiones PostgreSQL locales, claves JWT de prueba y secretos
+distintos para API y Auth.js. Aplica `uv run alembic upgrade head` desde `api/`
+con `MIGRATION_DATABASE_URL` antes de arrancar la aplicación.
+
+Arranca en terminales separadas, con sus variables de entorno configuradas:
+
+```bash
+cd api && uv run uvicorn app.main:app --port 8000
+cd api && uv run uvicorn app.worker_app:app --port 8001
+cd web && pnpm dev
+```
+
+La web local abre en `http://localhost:3000`. El emisor WhatsApp es opcional
+para crear recordatorios y recibir avisos internos; su puesta en marcha y
+vinculación se explican abajo. `api/.env.example` incluye valores ficticios,
+no credenciales válidas ni una configuración productiva.
 
 ## Servicio WhatsApp local
 
