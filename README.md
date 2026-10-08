@@ -250,6 +250,40 @@ posterior, sin ejecutar un downgrade destructivo.
 
 ## Avisos por WhatsApp
 
+### Número de cada cuenta de la app
+
+Otra persona puede [registrar su propia cuenta](https://recordatorios-web-one.vercel.app/register)
+o [iniciar sesión](https://recordatorios-web-one.vercel.app/login) y abrir
+**WhatsApp** en el dashboard. Allí escribe su número con código de país, acepta
+el consentimiento y pulsa **Guardar número**. Después puede activar
+**Enviar también una copia por WhatsApp** al crear un recordatorio. El número
+configurado es un **destino receptor**, vinculado a su cuenta de la app; no es
+una sesión de WhatsApp ni convierte su teléfono en emisor.
+
+Cada cuenta admite un solo destino activo. Para cambiarlo, guarda otro número
+en esa misma pantalla; reemplaza el anterior y cancela los envíos pendientes
+al destino viejo. **Desactivar WhatsApp** elimina el número activo y quita la
+preferencia de los recordatorios programados. Dos cuentas pueden tener números
+distintos, pero el mismo número no puede estar activo en ambas: la segunda
+recibe un conflicto hasta que la primera lo desactive. Para México, `+52` y
+`+521` con los mismos diez dígitos se consideran el mismo destino.
+
+Esta opción aparece sólo si la API tiene `WHATSAPP_ENABLED=true` y una
+`WHATSAPP_PHONE_KEY` válida. La app pide consentimiento, pero no comprueba la
+propiedad del teléfono mediante OTP. La disponibilidad HTTP de los servicios
+no confirma por sí sola que el flujo con una cuenta real esté habilitado en
+producción. Consulta el [estado de entrega](docs/ESTADO_ENTREGA.md).
+
+### Sesión emisora del proyecto
+
+Todos los avisos salen de **una sola cuenta emisora** administrada por el
+equipo. El proyecto la vincula una vez con el QR de `pnpm pair` en un terminal
+local y guarda la sesión cifrada en Neon. La app no ofrece QR ni inicio de
+sesión de WhatsApp para cada usuario. Permitir que cada persona envíe desde su
+propia cuenta requeriría otro diseño de sesiones, permisos, almacenamiento y
+operación; está fuera del alcance de la
+[decisión actual](docs/adr/ADR-0001-whatsapp-centralizado.md).
+
 `0004_whatsapp_delivery` añade destinos cifrados e intentos de envío. Cada
 usuario registra un número E.164 con consentimiento explícito v1. La API
 devuelve sólo los últimos cuatro dígitos; al desactivar el canal borra el

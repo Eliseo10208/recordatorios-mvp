@@ -31,6 +31,32 @@ funcionen de extremo a extremo con una cuenta real.
 | Web Push | No implementado. | No hay rutas, suscripciones, Service Worker ni tablas de Push. |
 | Notas | No implementadas. | El enunciado de la prueba solicita notas y recordatorios; la entrega actual cubre recordatorios. |
 
+### WhatsApp con cuentas separadas
+
+Dos personas pueden iniciar sesión en cuentas distintas de **Recordatorios** y
+guardar números receptores diferentes desde **Dashboard → WhatsApp**. La API
+obtiene el usuario de la sesión autenticada (`current_user`) y guarda un único
+destino por `user_id`. Un índice único impide que el mismo teléfono normalizado
+esté activo en dos cuentas. Si una persona cambia su número, el nuevo reemplaza
+al anterior; desactivarlo libera ese número para otra cuenta. El formulario
+requiere consentimiento y el backend limita los cambios a cinco por hora.
+
+Esta capacidad está cubierta por pruebas HTTP de aislamiento, conflicto,
+desactivación y cambio de destino. En esta revisión no se usaron dos cuentas
+reales en producción, por lo que no se confirma la configuración productiva
+de `WHATSAPP_ENABLED` y `WHATSAPP_PHONE_KEY`. El `readyz` del emisor sólo
+confirma la disponibilidad de la sesión central en ese instante.
+En una comprobación pública del 8 de octubre, `/register` respondió 200 y
+`GET /api/v1/notification-settings/whatsapp` sin credenciales respondió 401,
+como corresponde a una ruta protegida; esto tampoco prueba el alta de un
+destino autenticado.
+
+Una persona **no puede iniciar sesión en su propia cuenta de WhatsApp como
+emisor** desde la web. `whatsapp/` usa la sesión fija `central-sender`; el QR
+de `pnpm pair` es una operación local del equipo. El número de usuario es sólo
+el destino que recibe la copia. Tampoco existe verificación de propiedad por
+OTP, así que el consentimiento por casilla no demuestra control del número.
+
 La eliminación lógica de `0006_reminder_soft_delete` oculta el recordatorio y sus
 avisos al usuario, conserva las filas y cancela intentos de WhatsApp pendientes.
 Un envío ya iniciado puede terminar. La UI muestra una confirmación antes de
