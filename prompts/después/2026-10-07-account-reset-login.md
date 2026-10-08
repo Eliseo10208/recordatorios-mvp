@@ -19,3 +19,9 @@ añadió una prueba para HTTP y HTTPS. La pantalla de restablecimiento ahora só
 muestra el enlace de inicio de sesión al guardar correctamente la contraseña.
 Pasaron 8 pruebas de Vitest, 7 recorridos E2E, lint, typecheck, formato y build
 del frontend. El cambio queda pendiente de revisión independiente y despliegue.
+
+El seguimiento añadió una prueba de regresión de la ruta real
+`GET /api/account/me` con una cookie `__Secure-authjs.session-token` cifrada
+como la de producción. Comprueba respuesta 200 y que se envía el Bearer al API;
+con el lector de cookie anterior, la respuesta habría sido 401. La suite web
+ahora pasa 9 pruebas unitarias.
