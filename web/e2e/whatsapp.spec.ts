@@ -35,7 +35,7 @@ test("opt in, schedule a WhatsApp copy, and opt out", async ({ page }) => {
   const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
   await page.getByLabel("Fecha").fill(tomorrow.toISOString().slice(0, 10));
   await page.getByLabel("Hora", { exact: true }).fill("12:00");
-  await page.getByLabel("Zona horaria IANA").fill("UTC");
+  await page.getByLabel("Zona horaria").selectOption("UTC");
   await page.getByLabel("Enviar también una copia por WhatsApp").check();
   await expect(page.getByText(/Te avisaremos el/)).toBeVisible();
   await page.getByRole("button", { name: "Guardar recordatorio" }).click();
