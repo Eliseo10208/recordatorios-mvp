@@ -8,6 +8,7 @@ type Mode = "verify" | "reset";
 
 export function AccountLinkForm({ mode }: { mode: Mode }) {
   const fragmentToken = useRef<string | null>(null);
+  const submitting = useRef(false);
   const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
   const [state, setState] = useState<
@@ -16,6 +17,8 @@ export function AccountLinkForm({ mode }: { mode: Mode }) {
 
   const submit = useCallback(
     async (value: string, nextPassword?: string) => {
+      if (submitting.current) return;
+      submitting.current = true;
       setState("sending");
       try {
         const response = await fetch(
@@ -48,6 +51,8 @@ export function AccountLinkForm({ mode }: { mode: Mode }) {
         }
       } catch {
         setState("error");
+      } finally {
+        submitting.current = false;
       }
     },
     [mode],
@@ -77,26 +82,32 @@ export function AccountLinkForm({ mode }: { mode: Mode }) {
     <main className="auth-shell">
       <section className="auth-card">
         <h1>{title}</h1>
-        {state === "waiting" || state === "sending" ? (
-          <p role="status">Procesando el enlace…</p>
-        ) : null}
-        {state === "invalid" && (
-          <p className="form-error" role="alert">
-            El enlace no es válido o ya venció. Solicita uno nuevo.
-          </p>
-        )}
-        {state === "error" && (
-          <p className="form-error" role="alert">
-            No se pudo procesar el enlace. Inténtalo de nuevo más tarde.
-          </p>
-        )}
-        {state === "success" && (
-          <p role="status">
-            {mode === "verify"
-              ? "Correo confirmado."
-              : "Contraseña actualizada. Inicia sesión de nuevo."}
-          </p>
-        )}
+        <div className="feedback-slot" aria-live="polite">
+          {(state === "waiting" || state === "sending") && (
+            <p role="status">
+              {mode === "reset" && state === "sending"
+                ? "Guardando contraseña…"
+                : "Procesando el enlace…"}
+            </p>
+          )}
+          {state === "invalid" && (
+            <p className="form-error" role="alert">
+              El enlace no es válido o ya venció. Solicita uno nuevo.
+            </p>
+          )}
+          {state === "error" && (
+            <p className="form-error" role="alert">
+              No se pudo procesar el enlace. Inténtalo de nuevo más tarde.
+            </p>
+          )}
+          {state === "success" && (
+            <p role="status">
+              {mode === "verify"
+                ? "Correo confirmado."
+                : "Contraseña actualizada. Inicia sesión de nuevo."}
+            </p>
+          )}
+        </div>
         {state === "ready" && (
           <form
             onSubmit={(event) => {
@@ -115,6 +126,7 @@ export function AccountLinkForm({ mode }: { mode: Mode }) {
               required
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              disabled={state !== "ready"}
             />
             <button type="submit">Guardar contraseña</button>
           </form>

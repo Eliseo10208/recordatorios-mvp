@@ -24,6 +24,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const creating = mode === "register";
 
   async function submit(data: FormData) {
+    if (busy) return;
     setBusy(true);
     setError("");
     try {
@@ -61,7 +62,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   return (
     <main className="auth-shell">
       <div className="brand">
-        <span className="brand-mark">✦</span> Recordatorios
+        <span className="brand-mark" aria-hidden="true" /> Recordatorios
       </div>
       <section className="auth-card" aria-labelledby="auth-heading">
         <p className="eyebrow">UN ESPACIO PARA LO IMPORTANTE</p>
@@ -79,6 +80,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             id="email"
             type="email"
             autoComplete="email"
+            disabled={busy}
             {...register("email")}
           />
           {formState.errors.email && (
@@ -89,18 +91,27 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             id="password"
             type="password"
             autoComplete={creating ? "new-password" : "current-password"}
+            disabled={busy}
             {...register("password")}
           />
           {formState.errors.password && (
             <p className="field-error">{formState.errors.password.message}</p>
           )}
-          {error && (
-            <p className="form-error" role="alert">
-              {error}
-            </p>
-          )}
+          <div className="feedback-slot" aria-live="polite">
+            {error && (
+              <p className="form-error" role="alert">
+                {error}
+              </p>
+            )}
+          </div>
           <button type="submit" disabled={busy}>
-            {busy ? "Un momento…" : creating ? "Crear cuenta" : "Entrar"}
+            {busy
+              ? creating
+                ? "Creando cuenta…"
+                : "Iniciando sesión…"
+              : creating
+                ? "Crear cuenta"
+                : "Entrar"}
           </button>
         </form>
         <p className="switch-link">
