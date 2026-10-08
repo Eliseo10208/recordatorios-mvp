@@ -5,14 +5,15 @@ import { signOut } from "next-auth/react";
 import { useCallback, useEffect, useState } from "react";
 
 import { NotificationInbox } from "@/features/reminders/notification-inbox";
+import { LoadingCards } from "@/features/reminders/loading-cards";
 import { ReminderForm } from "@/features/reminders/reminder-form";
+import { useReminderFeed } from "@/features/reminders/use-reminder-feed";
 import { WhatsAppSettings } from "@/features/reminders/whatsapp-settings";
 import type { components } from "@/lib/api-types";
 import { authenticatedFetch } from "@/lib/reminder-client";
 
 type Profile = components["schemas"]["UserPublic"];
 type Reminder = components["schemas"]["ReminderPublic"];
-type Page = components["schemas"]["ReminderPage"];
 type Destination = components["schemas"]["DestinationPublic"];
 type Status = "upcoming" | "fired" | "canceled";
 type View = "list" | "form" | "detail" | "inbox" | "settings";
@@ -44,15 +45,17 @@ export function DashboardClient() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [view, setView] = useState<View>("list");
   const [status, setStatus] = useState<Status>("upcoming");
-  const [items, setItems] = useState<Reminder[]>([]);
-  const [cursor, setCursor] = useState<string | null>(null);
+  const feed = useReminderFeed(status, view === "list");
   const [selected, setSelected] = useState<Reminder | null>(null);
   const [editing, setEditing] = useState(false);
   const [unread, setUnread] = useState(0);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [working, setWorking] = useState(false);
   const [destination, setDestination] = useState<Destination | null>(null);
+  const [destinationState, setDestinationState] = useState<
+    "loading" | "ready" | "error"
+  >("loading");
+  const [destinationRetry, setDestinationRetry] = useState(0);
   const [verificationNotice, setVerificationNotice] = useState("");
 
   const loadCount = useCallback(async () => {
@@ -67,25 +70,6 @@ export function DashboardClient() {
       }
     } catch {
       // The inbox shows its own error when opened.
-    }
-  }, []);
-
-  const loadReminders = useCallback(async (filter: Status, next?: string) => {
-    try {
-      const params = new URLSearchParams({ status: filter });
-      if (next) params.set("cursor", next);
-      const response = await authenticatedFetch(`/api/reminders?${params}`);
-      if (!response.ok) throw new Error("list unavailable");
-      const data = (await response.json()) as Page;
-      setItems((previous) =>
-        next ? [...previous, ...data.items] : data.items,
-      );
-      setCursor(data.next_cursor);
-      setError("");
-    } catch {
-      setError("No se pudieron cargar tus recordatorios.");
-    } finally {
-      setLoading(false);
     }
   }, []);
 
@@ -104,21 +88,9 @@ export function DashboardClient() {
         if (active) setError("No se pudo cargar tu cuenta.");
       }
     }
-    async function loadDestination() {
-      try {
-        const response = await authenticatedFetch(
-          "/api/notification-settings/whatsapp",
-        );
-        if (response.ok && active)
-          setDestination((await response.json()) as Destination);
-      } catch {
-        // The settings view can show its own unavailable state.
-      }
-    }
     const initial = window.setTimeout(() => {
       void loadProfile();
       void loadCount();
-      void loadDestination();
     }, 0);
     return () => {
       active = false;
@@ -127,17 +99,32 @@ export function DashboardClient() {
   }, [loadCount, router]);
 
   useEffect(() => {
-    if (view !== "list") return;
-    const initial = window.setTimeout(() => void loadReminders(status), 0);
-    const timer = window.setInterval(() => {
-      void loadReminders(status);
-      void loadCount();
-    }, 15_000);
+    const timer = window.setInterval(() => void loadCount(), 15_000);
+    return () => window.clearInterval(timer);
+  }, [loadCount]);
+
+  useEffect(() => {
+    let active = true;
+    async function loadDestination() {
+      try {
+        const response = await authenticatedFetch(
+          "/api/notification-settings/whatsapp",
+        );
+        if (!response.ok) throw new Error("destination unavailable");
+        if (active) {
+          setDestination((await response.json()) as Destination);
+          setDestinationState("ready");
+        }
+      } catch {
+        if (active) setDestinationState("error");
+      }
+    }
+    const initial = window.setTimeout(() => void loadDestination(), 0);
     return () => {
+      active = false;
       window.clearTimeout(initial);
-      window.clearInterval(timer);
     };
-  }, [status, view, loadReminders, loadCount]);
+  }, [destinationRetry]);
 
   async function openReminder(id: string) {
     try {
@@ -215,22 +202,30 @@ export function DashboardClient() {
     <main className="dashboard-shell">
       <header className="dashboard-header">
         <div className="brand">
-          <span className="brand-mark">✦</span> Recordatorios
+          <span className="brand-mark" aria-hidden="true" /> Recordatorios
         </div>
         <nav className="dashboard-nav" aria-label="Navegación principal">
           <button
-            className="text-button"
-            onClick={() => {
-              setLoading(true);
-              setView("list");
-            }}
+            className={`text-button ${view === "list" || view === "form" || view === "detail" ? "active" : ""}`}
+            aria-pressed={
+              view === "list" || view === "form" || view === "detail"
+            }
+            onClick={() => setView("list")}
           >
             Mis recordatorios
           </button>
-          <button className="text-button" onClick={() => setView("inbox")}>
+          <button
+            className={`text-button ${view === "inbox" ? "active" : ""}`}
+            aria-pressed={view === "inbox"}
+            onClick={() => setView("inbox")}
+          >
             Avisos ({unread})
           </button>
-          <button className="text-button" onClick={() => setView("settings")}>
+          <button
+            className={`text-button ${view === "settings" ? "active" : ""}`}
+            aria-pressed={view === "settings"}
+            onClick={() => setView("settings")}
+          >
             WhatsApp
           </button>
           <button
@@ -296,24 +291,34 @@ export function DashboardClient() {
                 <button
                   key={key}
                   className={key === status ? "active" : ""}
-                  onClick={() => {
-                    setLoading(true);
-                    setStatus(key);
-                  }}
+                  onClick={() => setStatus(key)}
                   aria-pressed={key === status}
                 >
                   {labels[key]}
                 </button>
               ))}
             </div>
-            {loading && (
-              <p className="muted" role="status">
-                Cargando recordatorios…
+            {feed.loading && <LoadingCards label="Cargando recordatorios" />}
+            {feed.refreshing && (
+              <p className="field-hint" role="status">
+                Actualizando recordatorios…
               </p>
             )}
-            {!loading && items.length === 0 && (
+            {feed.error && (
+              <div className="inline-feedback" role="alert">
+                <p>{feed.error}</p>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={feed.retry}
+                >
+                  Reintentar
+                </button>
+              </div>
+            )}
+            {!feed.loading && !feed.error && feed.items.length === 0 && (
               <div className="empty-state">
-                <span aria-hidden="true">✦</span>
+                <span className="empty-state-mark" aria-hidden="true" />
                 <h3>
                   {status === "upcoming"
                     ? "Todavía no tienes recordatorios"
@@ -332,38 +337,40 @@ export function DashboardClient() {
                 )}
               </div>
             )}
-            <div className="reminder-list">
-              {items.map((item) => (
-                <article className="reminder-item" key={item.id}>
-                  <div>
-                    <p className="item-meta">{displayTime(item)}</p>
-                    <h3>{item.message}</h3>
-                    <p className="status-pill">
-                      {item.status === "processing"
-                        ? "En proceso"
-                        : labels[status]}
-                    </p>
-                    {(item.send_whatsapp || item.whatsapp_status) && (
-                      <p className="item-meta">
-                        WhatsApp: {whatsappLabel(item)}
+            <div className="reminder-list" aria-busy={feed.loading}>
+              {!feed.loading &&
+                feed.items.map((item) => (
+                  <article className="reminder-item" key={item.id}>
+                    <div>
+                      <p className="item-meta">{displayTime(item)}</p>
+                      <h3>{item.message}</h3>
+                      <p className="status-pill">
+                        {item.status === "processing"
+                          ? "En proceso"
+                          : labels[status]}
                       </p>
-                    )}
-                  </div>
-                  <button
-                    className="text-button"
-                    onClick={() => void openReminder(item.id)}
-                  >
-                    Ver detalle
-                  </button>
-                </article>
-              ))}
+                      {(item.send_whatsapp || item.whatsapp_status) && (
+                        <p className="item-meta">
+                          WhatsApp: {whatsappLabel(item)}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      className="text-button"
+                      onClick={() => void openReminder(item.id)}
+                    >
+                      Ver detalle
+                    </button>
+                  </article>
+                ))}
             </div>
-            {cursor && (
+            {feed.cursor && !feed.loading && (
               <button
                 className="secondary-button load-more"
-                onClick={() => void loadReminders(status, cursor)}
+                onClick={() => void feed.loadMore()}
+                disabled={feed.loadingMore}
               >
-                Cargar más
+                {feed.loadingMore ? "Cargando más…" : "Cargar más"}
               </button>
             )}
           </section>
@@ -378,6 +385,7 @@ export function DashboardClient() {
             <ReminderForm
               initial={editing ? (selected ?? undefined) : undefined}
               whatsappAvailable={Boolean(destination?.active)}
+              whatsappState={destinationState}
               onClose={() => setView(editing ? "detail" : "list")}
               onSaved={(item) => {
                 setSelected(item);
@@ -445,7 +453,25 @@ export function DashboardClient() {
             onOpenReminder={(id) => void openReminder(id)}
           />
         )}
-        {view === "settings" && (
+        {view === "settings" && destinationState === "loading" && (
+          <LoadingCards label="Cargando WhatsApp" />
+        )}
+        {view === "settings" && destinationState === "error" && (
+          <div className="inline-feedback" role="alert">
+            <p>No se pudo cargar la configuración de WhatsApp.</p>
+            <button
+              type="button"
+              className="secondary-button"
+              onClick={() => {
+                setDestinationState("loading");
+                setDestinationRetry((value) => value + 1);
+              }}
+            >
+              Reintentar
+            </button>
+          </div>
+        )}
+        {view === "settings" && destinationState === "ready" && (
           <WhatsAppSettings
             destination={destination}
             onChange={setDestination}

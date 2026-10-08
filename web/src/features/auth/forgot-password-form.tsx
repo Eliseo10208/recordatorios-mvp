@@ -50,18 +50,23 @@ export function ForgotPasswordForm() {
               id="email"
               type="email"
               autoComplete="email"
+              disabled={formState.isSubmitting}
               {...register("email")}
             />
             {formState.errors.email && (
               <p className="field-error">{formState.errors.email.message}</p>
             )}
-            {error && (
-              <p className="form-error" role="alert">
-                {error}
-              </p>
-            )}
+            <div className="feedback-slot" aria-live="polite">
+              {error && (
+                <p className="form-error" role="alert">
+                  {error}
+                </p>
+              )}
+            </div>
             <button type="submit" disabled={formState.isSubmitting}>
-              Solicitar enlace
+              {formState.isSubmitting
+                ? "Solicitando enlace…"
+                : "Solicitar enlace"}
             </button>
           </form>
         )}
