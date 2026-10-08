@@ -27,6 +27,9 @@ test("reset removes token from address bar before BFF request", async ({
     await route.fulfill({ status: 204, body: "" });
   });
   await page.goto(`/reset-password#token=${token}`);
+  await expect(
+    page.getByRole("link", { name: "Ir a iniciar sesión" }),
+  ).toHaveCount(0);
   await page
     .getByLabel("Nueva contraseña")
     .fill("another correct horse battery");
@@ -34,6 +37,9 @@ test("reset removes token from address bar before BFF request", async ({
   await expect(page.getByRole("status")).toContainText(
     "Contraseña actualizada",
   );
+  await expect(
+    page.getByRole("link", { name: "Ir a iniciar sesión" }),
+  ).toBeVisible();
 });
 
 test("verification removes token and consumes once", async ({ page }) => {

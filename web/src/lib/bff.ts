@@ -1,11 +1,9 @@
-import { getToken } from "next-auth/jwt";
 import type { NextRequest } from "next/server";
 
+import { privateToken } from "./private-token";
+
 export async function bearer(request: NextRequest): Promise<string | null> {
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-  });
+  const token = await privateToken(request);
   if (
     !token?.accessToken ||
     token.error ||

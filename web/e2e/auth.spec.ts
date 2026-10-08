@@ -49,3 +49,25 @@ test("registration, protected page, renewal, and logout", async ({
   await page.goto("/dashboard");
   await expect(page).toHaveURL(/\/login/);
 });
+
+test("login reaches dashboard after an unauthenticated redirect", async ({
+  page,
+}) => {
+  const email = `e2e-login-${Date.now()}@example.com`;
+  const password = "correct horse battery staple";
+  await page.goto("/register");
+  await page.getByLabel("Correo electrónico").fill(email);
+  await page.getByLabel("Contraseña").fill(password);
+  await page.getByRole("button", { name: "Crear cuenta" }).click();
+  await expect(page).toHaveURL(/\/dashboard/);
+
+  await page.getByRole("button", { name: "Cerrar sesión" }).click();
+  await expect(page).toHaveURL(/\/login/);
+  await page.goto("/dashboard");
+  await expect(page).toHaveURL(/\/login/);
+  await page.getByLabel("Correo electrónico").fill(email);
+  await page.getByLabel("Contraseña").fill(password);
+  await page.getByRole("button", { name: "Entrar" }).click();
+  await expect(page).toHaveURL(/\/dashboard/);
+  await expect(page.getByText(`Sesión activa para ${email}`)).toBeVisible();
+});
