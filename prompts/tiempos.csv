@@ -74,3 +74,7 @@ operacion-proveedores,después,,,,Validación documental; no se inició medició
 revision-documentacion-final,antes,,,,No se inició medición al recibir la solicitud; no se reconstruyó la duración
 revision-documentacion-final,durante,,,,Lectura y corrección documental; no se midió por separado
 revision-documentacion-final,después,,,,Validación de enlaces y diff; no se midió por separado
+estimacion-retrospectiva,antes,,,,Revisión posterior al despliegue; no se midió por separado
+estimacion-retrospectiva,durante,,,,Cálculo retrospectivo documentado en tiempos_estimados.csv; esta tarea posterior no integra el corte estimado
+estimacion-retrospectiva,después,,,,Validación del cálculo; no se midió por separado
+correccion-estimacion,después,,,,Corrección retrospectiva del usuario registrada en tiempos_estimados.csv; duración de esta tarea no medida
