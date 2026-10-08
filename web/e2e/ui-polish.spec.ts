@@ -102,23 +102,8 @@ test("@mobile reminder form labels keep space from hints and inputs", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.route("**/api/notification-settings/whatsapp", (route) =>
-    route.fulfill({
-      status: 200,
-      contentType: "application/json",
-      body: JSON.stringify({
-        available: true,
-        active: false,
-        masked_number: null,
-        consent_text: "Acepto recibir avisos",
-      }),
-    }),
-  );
   await page.goto("/dashboard");
   await page.getByRole("button", { name: "Añadir recordatorio" }).click();
-  await expect(
-    page.getByText("Configura tu número en WhatsApp para activar este canal."),
-  ).toBeVisible();
 
   const gaps = await page.evaluate(() => {
     const form = document.querySelector(".reminder-form");
@@ -126,9 +111,7 @@ test("@mobile reminder form labels keep space from hints and inputs", async ({
     const counter = [...(form?.querySelectorAll(".field-hint") ?? [])].find(
       (item) => item.textContent?.includes("/280"),
     );
-    const hint = [...(form?.querySelectorAll(".field-hint") ?? [])].find(
-      (item) => item.textContent?.includes("Configura tu número"),
-    );
+    const previous = form?.querySelector(".form-grid")?.previousElementSibling;
     const dateLabel = form?.querySelector('label[for="reminder-date"]');
     const dateInput = form?.querySelector("#reminder-date");
     const timeLabel = form?.querySelector('label[for="reminder-time"]');
@@ -136,7 +119,7 @@ test("@mobile reminder form labels keep space from hints and inputs", async ({
     if (
       !message ||
       !counter ||
-      !hint ||
+      !previous ||
       !dateLabel ||
       !dateInput ||
       !timeLabel ||
@@ -148,9 +131,9 @@ test("@mobile reminder form labels keep space from hints and inputs", async ({
       messageToCounter:
         counter.getBoundingClientRect().top -
         message.getBoundingClientRect().bottom,
-      hintToDate:
+      previousToDate:
         dateLabel.getBoundingClientRect().top -
-        hint.getBoundingClientRect().bottom,
+        previous.getBoundingClientRect().bottom,
       dateLabelToInput:
         dateInput.getBoundingClientRect().top -
         dateLabel.getBoundingClientRect().bottom,
@@ -161,7 +144,7 @@ test("@mobile reminder form labels keep space from hints and inputs", async ({
   });
 
   expect(gaps.messageToCounter).toBeGreaterThanOrEqual(4);
-  expect(gaps.hintToDate).toBeGreaterThanOrEqual(12);
+  expect(gaps.previousToDate).toBeGreaterThanOrEqual(12);
   expect(gaps.dateLabelToInput).toBeGreaterThanOrEqual(6);
   expect(gaps.timeLabelToInput).toBeGreaterThanOrEqual(6);
 

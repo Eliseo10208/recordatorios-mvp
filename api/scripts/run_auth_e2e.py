@@ -62,7 +62,9 @@ def main() -> None:
             "JWT_KID": "e2e-test",
             "JWT_ISSUER": "recordatorios-e2e",
             "JWT_AUDIENCE": "recordatorios-web-e2e",
-            "JWT_ACCESS_SECONDS": "35",
+            # Keep shared visual-test storage fresh while the long-running auth
+            # test still exercises renewal near the end of the token lifetime.
+            "JWT_ACCESS_SECONDS": "120",
             "REFRESH_SECRET": secrets.token_urlsafe(48),
             "AUTH_SECRET": secrets.token_urlsafe(48),
             "AUTH_URL": origin,
