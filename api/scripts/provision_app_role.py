@@ -1,7 +1,8 @@
 """Create a runtime role limited to the API and worker tables.
 
-Requires MIGRATION_DATABASE_URL and APP_DB_PASSWORD. Never prints secrets.
-Run once after migration 0004; the migration owner stays outside Render.
+Requires MIGRATION_DATABASE_URL. APP_DB_PASSWORD is needed only for a new role.
+Never prints secrets.
+Run after migration 0005; existing roles receive only missing grants.
 """
 
 from __future__ import annotations
@@ -18,6 +19,7 @@ TABLES = (
     "refresh_sessions",
     "refresh_aliases",
     "auth_rate_limits",
+    "account_tokens",
     "reminders",
     "notifications",
     "whatsapp_destinations",
@@ -36,22 +38,21 @@ def main() -> None:
         or not parsed.path.strip("/")
     ):
         raise RuntimeError("MIGRATION_DATABASE_URL must be a PostgreSQL connection URL")
-    if len(password) < 32:
-        raise RuntimeError("APP_DB_PASSWORD must be at least 32 characters")
 
     with psycopg.connect(url) as connection:
         exists = connection.execute(
             "SELECT 1 FROM pg_roles WHERE rolname = %s", (ROLE,)
         ).fetchone()
-        if exists:
-            raise RuntimeError(
-                "App role already exists; refusing to rotate its password"
+        if not exists:
+            if len(password) < 32:
+                raise RuntimeError(
+                    "APP_DB_PASSWORD must be at least 32 characters when creating the role"
+                )
+            connection.execute(
+                sql.SQL("CREATE ROLE {} WITH LOGIN PASSWORD {}").format(
+                    sql.Identifier(ROLE), sql.Literal(password)
+                )
             )
-        connection.execute(
-            sql.SQL("CREATE ROLE {} WITH LOGIN PASSWORD {}").format(
-                sql.Identifier(ROLE), sql.Literal(password)
-            )
-        )
         connection.execute(
             sql.SQL("GRANT USAGE ON SCHEMA public TO {}").format(sql.Identifier(ROLE))
         )

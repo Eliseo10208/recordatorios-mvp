@@ -53,6 +53,7 @@ export function DashboardClient() {
   const [error, setError] = useState("");
   const [working, setWorking] = useState(false);
   const [destination, setDestination] = useState<Destination | null>(null);
+  const [verificationNotice, setVerificationNotice] = useState("");
 
   const loadCount = useCallback(async () => {
     try {
@@ -188,6 +189,28 @@ export function DashboardClient() {
     }
   }
 
+  async function resendVerification() {
+    setWorking(true);
+    setVerificationNotice("");
+    try {
+      const response = await fetch("/api/account/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      if (!response.ok) throw new Error("unavailable");
+      setVerificationNotice(
+        "Si el envío está disponible, recibirás un enlace de verificación.",
+      );
+    } catch {
+      setVerificationNotice(
+        "No se pudo solicitar el enlace. Inténtalo después.",
+      );
+    } finally {
+      setWorking(false);
+    }
+  }
+
   return (
     <main className="dashboard-shell">
       <header className="dashboard-header">
@@ -228,7 +251,17 @@ export function DashboardClient() {
             <p className="muted">Sesión activa para {profile.email}</p>
           )}
           {profile && !profile.email_verified && (
-            <p className="notice">Tu correo está pendiente de verificación.</p>
+            <div className="notice">
+              <p>Tu correo está pendiente de verificación.</p>
+              <button
+                type="button"
+                onClick={() => void resendVerification()}
+                disabled={working}
+              >
+                Reenviar enlace
+              </button>
+              {verificationNotice && <p role="status">{verificationNotice}</p>}
+            </div>
           )}
         </div>
 

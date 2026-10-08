@@ -109,6 +109,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
             {creating ? "Inicia sesión" : "Crea una cuenta"}
           </Link>
         </p>
+        {!creating && (
+          <p className="switch-link">
+            <Link href="/forgot-password">Olvidé mi contraseña</Link>
+          </p>
+        )}
       </section>
       <p className="footer-note">Tus planes, en su momento.</p>
     </main>

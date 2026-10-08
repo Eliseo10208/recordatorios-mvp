@@ -56,6 +56,14 @@ services:
         sync: false
       - key: REFRESH_SECRET
         sync: false
+      - key: ACCOUNT_EMAIL_ENABLED
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false
+      - key: WEB_BASE_URL
+        value: https://recordatorios-web-one.vercel.app
       - key: WHATSAPP_ENABLED
         value: 'true'
       - key: WHATSAPP_PHONE_KEY
