@@ -57,6 +57,15 @@ test("create, edit, cancel, fire, and read an internal notice", async ({
     .getByRole("button", { name: "Ver detalle de Aviso editado" })
     .click();
   await expect(page.getByText("Estado: canceled")).toBeVisible();
+  await page.getByRole("button", { name: "Eliminar recordatorio" }).click();
+  await expect(
+    page.getByText("El recordatorio y sus avisos desaparecerán de tu cuenta."),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Sí, eliminar" }),
+  ).toBeFocused();
+  await page.getByRole("button", { name: "Sí, eliminar" }).click();
+  await expect(page.getByText("No hay recordatorios cancelados")).toBeVisible();
   await page.getByRole("button", { name: "Mis recordatorios" }).click();
   await page.getByRole("button", { name: "Añadir recordatorio" }).click();
   await page
@@ -86,6 +95,28 @@ test("create, edit, cancel, fire, and read an internal notice", async ({
   await page.getByRole("button", { name: "Marcar leído", exact: true }).click();
   await expect(page.getByText(/^Leído ·/)).toBeVisible();
   await expect(page.getByRole("button", { name: "Avisos (0)" })).toBeVisible();
+  await page.getByRole("button", { name: "Ver recordatorio" }).click();
+  await expect(page.getByText("Estado: fired")).toBeVisible();
+  await page.getByRole("button", { name: "Eliminar recordatorio" }).click();
+  await page.getByRole("button", { name: "Sí, eliminar" }).click();
+  await expect(page.getByText("No hay recordatorios cancelados")).toBeVisible();
+  await page.getByRole("button", { name: "Avisos (0)" }).click();
+  await expect(page.getByText("Todo al día")).toBeVisible();
+
+  await page.getByRole("button", { name: "Mis recordatorios" }).click();
+  await page.getByRole("button", { name: "Próximos" }).click();
+  await page.getByRole("button", { name: "Añadir recordatorio" }).click();
+  await page
+    .getByLabel("¿Qué necesitas recordar?")
+    .fill("Ocultar recordatorio");
+  await page.getByLabel("Fecha").fill(tomorrow.toISOString().slice(0, 10));
+  await page.getByLabel("Hora", { exact: true }).fill("12:00");
+  await page.getByLabel("Zona horaria IANA").fill("UTC");
+  await expect(page.getByText(/Te avisaremos el/)).toBeVisible();
+  await page.getByRole("button", { name: "Guardar recordatorio" }).click();
+  await page.getByRole("button", { name: "Eliminar recordatorio" }).click();
+  await page.getByRole("button", { name: "Sí, eliminar" }).click();
+  await expect(page.getByText("Todavía no tienes recordatorios")).toBeVisible();
 
   const session = await page.request.get("/api/auth/session");
   expect(await session.text()).not.toMatch(/accessToken|refreshToken/);

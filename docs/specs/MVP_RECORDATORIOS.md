@@ -310,6 +310,7 @@ erDiagram
         datetime lease_until
         datetime fired_at
         datetime canceled_at
+        datetime deleted_at
     }
 
     NOTIFICATIONS {
@@ -413,6 +414,14 @@ processing → scheduled  cuando vence la lease antes del commit
 
 fired significa que la notificación interna fue creada, no que WhatsApp fue
 entregado.
+
+Eliminar un recordatorio programado, disparado o cancelado fija `deleted_at`
+sin cambiar su estado ni borrar filas. Un recordatorio `processing` no puede
+eliminarse hasta que termine. Los recordatorios eliminados quedan fuera de las
+listas, el detalle y el reclamo del worker; sus avisos quedan fuera de la
+bandeja y del contador. Los intentos WhatsApp pendientes se cancelan y el
+despacho comprueba de nuevo `deleted_at` antes de enviar. Un envío ya iniciado
+puede terminar y conserva su resultado interno.
 
 ### Notificación interna
 
@@ -521,6 +530,7 @@ POST   /api/v1/reminders
 GET    /api/v1/reminders/{reminderId}
 PATCH  /api/v1/reminders/{reminderId}
 POST   /api/v1/reminders/{reminderId}/cancel
+DELETE /api/v1/reminders/{reminderId}
 
 GET    /api/v1/notifications
 GET    /api/v1/notifications/unread-count
@@ -541,9 +551,12 @@ user_id que la API tome como autoridad.
 En el corte del núcleo, el formulario envía fecha local (`YYYY-MM-DD`), hora
 (`HH:mm`) y zona IANA. La vista previa y las escrituras calculan la hora UTC
 en la API. La creación exige `Idempotency-Key` UUID; edición y cancelación
-exigen la versión observada. Las listas usan cursor y como máximo 100 elementos
-por página. Este corte genera sólo notificaciones internas: Push y WhatsApp
-siguen sus entregas independientes.
+exigen la versión observada. `DELETE` también exige `expected_version` en JSON:
+responde 204 al ocultar, 404 si no existe, es ajeno o ya se ocultó, y 409 ante
+versión obsoleta o estado `processing`. La clave de creación de un recordatorio
+oculto permanece reservada y su reutilización responde 409. Las listas usan
+cursor y como máximo 100 elementos por página. Este corte genera sólo
+notificaciones internas: Push y WhatsApp siguen sus entregas independientes.
 
 ## 14. Seguridad y privacidad
 

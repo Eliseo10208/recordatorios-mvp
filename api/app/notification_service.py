@@ -8,7 +8,7 @@ from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.orm import Session
 
 from app.auth_service import AuthProblem
-from app.db import Notification, User
+from app.db import Notification, Reminder, User
 from app.pagination import decode_cursor, encode_cursor
 from app.reminder_schemas import NotificationPage, NotificationPublic, UnreadCount
 from app.reminder_service import aware, database_now
@@ -28,7 +28,11 @@ def public_notification(row: Notification) -> NotificationPublic:
 def list_notifications(
     db: Session, user: User, limit: int, cursor: str | None
 ) -> NotificationPage:
-    query = select(Notification).where(Notification.user_id == user.id)
+    query = (
+        select(Notification)
+        .join(Reminder, Reminder.id == Notification.reminder_id)
+        .where(Notification.user_id == user.id, Reminder.deleted_at.is_(None))
+    )
     if cursor:
         at, item_id = decode_cursor(cursor, "notifications")
         query = query.where(
@@ -57,8 +61,12 @@ def list_notifications(
 
 def unread_count(db: Session, user: User) -> UnreadCount:
     count = db.scalar(
-        select(func.count(Notification.id)).where(
-            Notification.user_id == user.id, Notification.read_at.is_(None)
+        select(func.count(Notification.id))
+        .join(Reminder, Reminder.id == Notification.reminder_id)
+        .where(
+            Notification.user_id == user.id,
+            Notification.read_at.is_(None),
+            Reminder.deleted_at.is_(None),
         )
     )
     return UnreadCount(count=count or 0)
@@ -66,8 +74,12 @@ def unread_count(db: Session, user: User) -> UnreadCount:
 
 def read_one(db: Session, user: User, notification_id: UUID) -> None:
     row = db.scalar(
-        select(Notification).where(
-            Notification.id == notification_id, Notification.user_id == user.id
+        select(Notification)
+        .join(Reminder, Reminder.id == Notification.reminder_id)
+        .where(
+            Notification.id == notification_id,
+            Notification.user_id == user.id,
+            Reminder.deleted_at.is_(None),
         )
     )
     if row is None:
@@ -80,7 +92,13 @@ def read_one(db: Session, user: User, notification_id: UUID) -> None:
 def read_all(db: Session, user: User) -> None:
     db.execute(
         update(Notification)
-        .where(Notification.user_id == user.id, Notification.read_at.is_(None))
+        .where(
+            Notification.user_id == user.id,
+            Notification.read_at.is_(None),
+            Notification.reminder_id.in_(
+                select(Reminder.id).where(Reminder.deleted_at.is_(None))
+            ),
+        )
         .values(read_at=database_now(db))
     )
     db.commit()

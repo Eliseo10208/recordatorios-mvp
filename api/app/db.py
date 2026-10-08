@@ -118,6 +118,7 @@ class Reminder(Base):
     lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     fired_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     canceled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     idempotency_key: Mapped[UUID] = mapped_column()

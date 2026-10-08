@@ -30,6 +30,7 @@ from app.reminder_schemas import (
 from app.reminder_service import (
     cancel_reminder,
     create_reminder,
+    delete_reminder,
     edit_reminder,
     list_reminders,
     owned,
@@ -102,6 +103,14 @@ def cancel_route(
     reminder_id: UUID, body: VersionInput, db: Db, user: Owner
 ) -> ReminderPublic:
     return cancel_reminder(db, user, reminder_id, body.expected_version)
+
+
+@router.delete("/reminders/{reminder_id}", status_code=204)
+def delete_route(
+    reminder_id: UUID, body: VersionInput, db: Db, user: Owner
+) -> Response:
+    delete_reminder(db, user, reminder_id, body.expected_version)
+    return Response(status_code=204)
 
 
 @router.get("/notifications", response_model=NotificationPage)
