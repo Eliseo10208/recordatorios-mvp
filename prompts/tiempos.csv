@@ -87,3 +87,6 @@ estimacion-retrospectiva,antes,,,,Revisión posterior al despliegue; no se midi�
 estimacion-retrospectiva,durante,,,,Cálculo retrospectivo documentado en tiempos_estimados.csv; esta tarea posterior no integra el corte estimado
 estimacion-retrospectiva,después,,,,Validación del cálculo; no se midió por separado
 correccion-estimacion,después,,,,Corrección retrospectiva del usuario registrada en tiempos_estimados.csv; duración de esta tarea no medida
+ci-fallo-merge,antes,,,,Revisión de las ejecuciones de GitHub; duración no medida por separado
+ci-fallo-merge,durante,,,,Diagnóstico y ajuste del entorno E2E; duración no medida por separado
+ci-fallo-merge,después,,,,Validación local y en CI; duración no medida por separado

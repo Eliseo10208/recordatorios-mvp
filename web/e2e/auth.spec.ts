@@ -41,7 +41,8 @@ test("registration, protected page, renewal, and logout", async ({
   expect(profileBody).not.toContain("access_token");
   expect(profileBody).not.toContain("refresh_token");
 
-  await page.waitForTimeout(37_000);
+  // E2E access tokens last 120 seconds; renewal begins 30 seconds before expiry.
+  await page.waitForTimeout(95_000);
   await page.reload();
   await expect(page.getByText(`Sesión activa para ${email}`)).toBeVisible();
   await page.getByRole("button", { name: "Cerrar sesión" }).click();
