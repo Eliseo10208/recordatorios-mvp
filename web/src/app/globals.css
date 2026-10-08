@@ -296,6 +296,14 @@ input:focus {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 16px;
+  margin-top: 16px;
+}
+.form-grid label {
+  display: block;
+  margin: 0 0 8px;
+}
+.reminder-form > .field-hint {
+  margin-top: 6px;
 }
 .schedule-preview {
   display: grid;

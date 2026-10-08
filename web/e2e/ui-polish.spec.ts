@@ -98,6 +98,62 @@ test("@mobile main sections fit a narrow viewport", async ({ page }) => {
   }
 });
 
+test("@mobile reminder form labels keep space from hints and inputs", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/dashboard");
+  await page.getByRole("button", { name: "Añadir recordatorio" }).click();
+  await expect(
+    page.getByText("Configura tu número en WhatsApp para activar este canal."),
+  ).toBeVisible();
+
+  const gaps = await page.evaluate(() => {
+    const form = document.querySelector(".reminder-form");
+    const message = form?.querySelector("#reminder-message");
+    const counter = [...(form?.querySelectorAll(".field-hint") ?? [])].find(
+      (item) => item.textContent?.includes("/280"),
+    );
+    const hint = [...(form?.querySelectorAll(".field-hint") ?? [])].find(
+      (item) => item.textContent?.includes("Configura tu número"),
+    );
+    const dateLabel = form?.querySelector('label[for="reminder-date"]');
+    const dateInput = form?.querySelector("#reminder-date");
+    const timeLabel = form?.querySelector('label[for="reminder-time"]');
+    const timeInput = form?.querySelector("#reminder-time");
+    if (
+      !message ||
+      !counter ||
+      !hint ||
+      !dateLabel ||
+      !dateInput ||
+      !timeLabel ||
+      !timeInput
+    ) {
+      throw new Error("Reminder form fields are missing");
+    }
+    return {
+      messageToCounter:
+        counter.getBoundingClientRect().top -
+        message.getBoundingClientRect().bottom,
+      hintToDate:
+        dateLabel.getBoundingClientRect().top -
+        hint.getBoundingClientRect().bottom,
+      dateLabelToInput:
+        dateInput.getBoundingClientRect().top -
+        dateLabel.getBoundingClientRect().bottom,
+      timeLabelToInput:
+        timeInput.getBoundingClientRect().top -
+        timeLabel.getBoundingClientRect().bottom,
+    };
+  });
+
+  expect(gaps.messageToCounter).toBeGreaterThanOrEqual(4);
+  expect(gaps.hintToDate).toBeGreaterThanOrEqual(12);
+  expect(gaps.dateLabelToInput).toBeGreaterThanOrEqual(6);
+  expect(gaps.timeLabelToInput).toBeGreaterThanOrEqual(6);
+});
+
 test("reminder cards form three, two, and one columns as space narrows", async ({
   page,
 }) => {

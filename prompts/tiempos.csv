@@ -1,4 +1,7 @@
 tarea,etapa,inicio_iso8601,fin_iso8601,duracion_minutos,observaciones
+pixel-perfect-web,antes,,,,No se inició medición al recibir la tarea; no se reconstruyó la duración
+pixel-perfect-web,durante,,,,No se midió esta etapa; no se estimó la duración
+pixel-perfect-web,después,,,,No se midió esta etapa; no se estimó la duración
 construccion-mvp-recordatorios,inicio,2026-10-07T13:00:00-06:00,,,Hora de inicio informada retrospectivamente por el usuario; desde este punto se llevará el registro cronológico; no se calculó duración
 documentar-mvp-recordatorios,antes,,,,No se inició medición antes de recibir la tarea; no se reconstruyó la duración
 documentar-mvp-recordatorios,durante,,,,No se inició medición de esta etapa; no se estimó la duración
