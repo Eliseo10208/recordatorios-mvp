@@ -89,7 +89,11 @@ export function WhatsAppSettings({
         </p>
       )}
       {destination?.available && (
-        <form className="reminder-form" onSubmit={(event) => void save(event)}>
+        <form
+          id="whatsapp-settings-form"
+          className="reminder-form"
+          onSubmit={(event) => void save(event)}
+        >
           <label htmlFor="whatsapp-phone">Número con código de país</label>
           <input
             id="whatsapp-phone"
@@ -119,31 +123,37 @@ export function WhatsAppSettings({
               </p>
             )}
           </div>
-          <div className="form-actions">
-            <button type="submit" disabled={busy || !consent}>
-              {busy ? "Guardando…" : "Guardar número"}
-            </button>
-            {destination.active && (
-              <button
-                type="button"
-                className="danger-button"
-                disabled={busy}
-                onClick={() => void disable()}
-              >
-                Desactivar WhatsApp
-              </button>
-            )}
-          </div>
         </form>
       )}
-      <button
-        type="button"
-        className="secondary-button"
-        onClick={onClose}
-        disabled={busy}
-      >
-        Volver
-      </button>
+      <div className="form-actions whatsapp-actions">
+        {destination?.available && (
+          <button
+            type="submit"
+            form="whatsapp-settings-form"
+            disabled={busy || !consent}
+          >
+            {busy ? "Guardando…" : "Guardar número"}
+          </button>
+        )}
+        {destination?.active && (
+          <button
+            type="button"
+            className="danger-button"
+            disabled={busy}
+            onClick={() => void disable()}
+          >
+            Desactivar WhatsApp
+          </button>
+        )}
+        <button
+          type="button"
+          className="secondary-button"
+          onClick={onClose}
+          disabled={busy}
+        >
+          Volver
+        </button>
+      </div>
     </section>
   );
 }

@@ -38,7 +38,11 @@ test("create, edit, cancel, fire, and read an internal notice", async ({
     },
   });
   expect(rejectedOrigin.status()).toBe(403);
-  await page.getByRole("button", { name: "Editar", exact: true }).click();
+  await page.getByRole("button", { name: "Mis recordatorios" }).click();
+  await page.getByRole("button", { name: "Editar Cambiar este aviso" }).click();
+  await expect(
+    page.getByRole("heading", { name: "Editar recordatorio" }),
+  ).toBeVisible();
   await page.getByLabel("¿Qué necesitas recordar?").fill("Aviso editado");
   await page.getByRole("button", { name: "Guardar cambios" }).click();
   await expect(
@@ -47,6 +51,12 @@ test("create, edit, cancel, fire, and read an internal notice", async ({
   await page.getByRole("button", { name: "Cancelar recordatorio" }).click();
   await expect(page.getByText("Estado: canceled")).toBeVisible();
 
+  await page.getByRole("button", { name: "Mis recordatorios" }).click();
+  await page.getByRole("button", { name: "Cancelados" }).click();
+  await page
+    .getByRole("button", { name: "Ver detalle de Aviso editado" })
+    .click();
+  await expect(page.getByText("Estado: canceled")).toBeVisible();
   await page.getByRole("button", { name: "Mis recordatorios" }).click();
   await page.getByRole("button", { name: "Añadir recordatorio" }).click();
   await page

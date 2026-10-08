@@ -50,3 +50,6 @@ account-reset-login,después,,,,Verificación local realizada; no se midió esta
 ui-polish,antes,,,,No se midió esta etapa por separado; no se reconstruyó la duración
 ui-polish,durante,,,,Implementación y pruebas locales; no se midió esta etapa por separado
 ui-polish,después,,,,Revisión independiente y despliegue pendientes; no se inventó la duración
+frontend-card-grid,antes,,,,No se midió esta etapa por separado
+frontend-card-grid,durante,,,,Implementación y pruebas locales; no se midió esta etapa por separado
+frontend-card-grid,después,,,,Preparación del PR; no se midió esta etapa por separado

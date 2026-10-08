@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import { NotificationInbox } from "@/features/reminders/notification-inbox";
 import { LoadingCards } from "@/features/reminders/loading-cards";
+import { ReminderCard } from "@/features/reminders/reminder-card";
 import { ReminderForm } from "@/features/reminders/reminder-form";
 import { useReminderFeed } from "@/features/reminders/use-reminder-feed";
 import { WhatsAppSettings } from "@/features/reminders/whatsapp-settings";
@@ -57,6 +58,7 @@ export function DashboardClient() {
   >("loading");
   const [destinationRetry, setDestinationRetry] = useState(0);
   const [verificationNotice, setVerificationNotice] = useState("");
+  const [now, setNow] = useState(() => Date.now());
 
   const loadCount = useCallback(async () => {
     try {
@@ -104,6 +106,12 @@ export function DashboardClient() {
   }, [loadCount]);
 
   useEffect(() => {
+    if (view !== "list") return;
+    const timer = window.setInterval(() => setNow(Date.now()), 15_000);
+    return () => window.clearInterval(timer);
+  }, [view]);
+
+  useEffect(() => {
     let active = true;
     async function loadDestination() {
       try {
@@ -126,12 +134,15 @@ export function DashboardClient() {
     };
   }, [destinationRetry]);
 
-  async function openReminder(id: string) {
+  async function openReminder(id: string, edit = false) {
     try {
       const response = await authenticatedFetch(`/api/reminders/${id}`);
       if (!response.ok) throw new Error("not found");
-      setSelected((await response.json()) as Reminder);
-      setView("detail");
+      const item = (await response.json()) as Reminder;
+      setSelected(item);
+      const canEdit = edit && item.status === "scheduled";
+      setEditing(canEdit);
+      setView(canEdit ? "form" : "detail");
       setError("");
     } catch {
       setError("No se pudo abrir este recordatorio.");
@@ -337,31 +348,29 @@ export function DashboardClient() {
                 )}
               </div>
             )}
-            <div className="reminder-list" aria-busy={feed.loading}>
+            <div
+              className="reminder-list reminder-grid"
+              aria-busy={feed.loading}
+            >
               {!feed.loading &&
                 feed.items.map((item) => (
-                  <article className="reminder-item" key={item.id}>
-                    <div>
-                      <p className="item-meta">{displayTime(item)}</p>
-                      <h3>{item.message}</h3>
-                      <p className="status-pill">
-                        {item.status === "processing"
-                          ? "En proceso"
-                          : labels[status]}
-                      </p>
-                      {(item.send_whatsapp || item.whatsapp_status) && (
-                        <p className="item-meta">
-                          WhatsApp: {whatsappLabel(item)}
-                        </p>
-                      )}
-                    </div>
-                    <button
-                      className="text-button"
-                      onClick={() => void openReminder(item.id)}
-                    >
-                      Ver detalle
-                    </button>
-                  </article>
+                  <ReminderCard
+                    key={item.id}
+                    item={item}
+                    statusLabel={
+                      item.status === "processing"
+                        ? "En proceso"
+                        : labels[status]
+                    }
+                    timeLabel={displayTime(item)}
+                    whatsappLabel={
+                      item.send_whatsapp || item.whatsapp_status
+                        ? whatsappLabel(item)
+                        : null
+                    }
+                    now={now}
+                    onOpen={(edit) => void openReminder(item.id, edit)}
+                  />
                 ))}
             </div>
             {feed.cursor && !feed.loading && (
