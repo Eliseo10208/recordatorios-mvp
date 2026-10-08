@@ -44,3 +44,6 @@ api-whatsapp-deploy,después,,,,Validación local terminada; revisión y desplie
 account-email,antes,,,,No se midió por separado; no se reconstruyó la duración
 account-email,durante,,,,Implementación y pruebas locales; no se midió por separado
 account-email,después,,,,Revisión independiente y despliegue pendientes; no se inventó la duración
+account-reset-login,antes,,,,No se midió esta etapa por separado; no se reconstruyó la duración
+account-reset-login,durante,,,,Diagnóstico de cookie segura en HTTPS y prueba de regresión del BFF; no se midió esta etapa por separado
+account-reset-login,después,,,,Verificación local realizada; no se midió esta etapa por separado
