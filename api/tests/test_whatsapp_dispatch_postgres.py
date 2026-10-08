@@ -23,9 +23,64 @@ from app.db import (
     WhatsAppDestination,
     WhatsAppDispatchWindow,
 )
+from app.reminder_service import delete_reminder
 from app.reminder_worker import claim_due, fire_claimed
 from app.whatsapp_crypto import decrypt, encrypt, fingerprint, keys
-from app.whatsapp_dispatch import dispatch_once
+from app.whatsapp_dispatch import (
+    _request_payload,
+    _save_result,
+    claim_pending,
+    dispatch_once,
+)
+
+
+def test_deleted_reminder_cancels_pending_and_claimed_send(
+    factory: sessionmaker[Session],
+) -> None:
+    first_id = due(factory)
+    first_attempt = fire(factory, first_id)
+    with factory() as db:
+        reminder = db.get(Reminder, first_id)
+        assert reminder
+        owner = db.get(User, reminder.user_id)
+        assert owner
+        delete_reminder(db, owner, first_id, reminder.version)
+    with factory() as db:
+        saved = db.get(DeliveryAttempt, first_attempt.id)
+        assert saved and saved.status == "canceled"
+
+    second_id = due(factory)
+    second_attempt = fire(factory, second_id)
+    with factory() as db:
+        assert second_attempt.id in claim_pending(db)
+    with factory() as db:
+        reminder = db.get(Reminder, second_id)
+        assert reminder
+        owner = db.get(User, reminder.user_id)
+        assert owner
+        delete_reminder(db, owner, second_id, reminder.version)
+    with factory() as db:
+        assert _request_payload(db, second_attempt.id) is None
+        saved = db.get(DeliveryAttempt, second_attempt.id)
+        assert saved and saved.status == "canceled"
+
+    third_id = due(factory)
+    third_attempt = fire(factory, third_id)
+    with factory() as db:
+        assert third_attempt.id in claim_pending(db)
+    with factory() as db:
+        assert _request_payload(db, third_attempt.id) is not None
+    with factory() as db:
+        reminder = db.get(Reminder, third_id)
+        assert reminder
+        owner = db.get(User, reminder.user_id)
+        assert owner
+        delete_reminder(db, owner, third_id, reminder.version)
+    with factory() as db:
+        _save_result(db, third_attempt.id, ("accepted", "provider-after-delete", None))
+        saved = db.get(DeliveryAttempt, third_attempt.id)
+        assert saved and saved.status == "accepted"
+        assert saved.provider_message_id == "provider-after-delete"
 
 
 @pytest.fixture

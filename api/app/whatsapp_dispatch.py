@@ -89,8 +89,11 @@ def _request_payload(db: Session, attempt_id: UUID) -> tuple[str, str] | None:
         db.rollback()
         return None
     reminder = db.get(Reminder, row.reminder_id)
-    if reminder is None:
+    if reminder is None or reminder.deleted_at is not None:
         row.status = "canceled"
+        row.lease_until = None
+        row.next_attempt_at = None
+        row.updated_at = database_now(db)
         db.commit()
         return None
     target = db.scalar(

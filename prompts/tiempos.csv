@@ -53,3 +53,9 @@ ui-polish,después,,,,Revisión independiente y despliegue pendientes; no se inv
 frontend-card-grid,antes,,,,No se midió esta etapa por separado
 frontend-card-grid,durante,,,,Implementación y pruebas locales; no se midió esta etapa por separado
 frontend-card-grid,después,,,,Preparación del PR; no se midió esta etapa por separado
+eliminar-recordatorios,antes,,,,La planificación ocurrió antes de esta sesión de implementación y no se midió; no se estimó la duración
+eliminar-recordatorios,durante,2026-10-08T01:00:44-06:00,2026-10-08T01:12:49-06:00,12.08,Ciclos TDD e implementación medidos desde la primera lectura del reloj de esta sesión
+eliminar-recordatorios,después,2026-10-08T01:12:49-06:00,2026-10-08T01:17:08-06:00,4.32,Validación final y revisión del diff medidas; revisión humana independiente pendiente
+integrar-eliminacion-main,antes,,,,No se midió esta etapa por separado
+integrar-eliminacion-main,durante,,,,Integración y verificaciones locales; no se midió esta etapa por separado
+integrar-eliminacion-main,después,,,,Preparación del PR; no se midió esta etapa por separado

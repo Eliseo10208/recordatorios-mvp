@@ -50,9 +50,9 @@ jobs:
         working-directory: api
       - run: uv run --frozen alembic check
         working-directory: api
-      - run: uv run --frozen ruff format --check app tests scripts alembic/env.py alembic/versions/0002_auth.py alembic/versions/0003_reminders.py alembic/versions/0004_whatsapp_delivery.py alembic/versions/0005_account_tokens.py
+      - run: uv run --frozen ruff format --check app tests scripts alembic/env.py alembic/versions/0002_auth.py alembic/versions/0003_reminders.py alembic/versions/0004_whatsapp_delivery.py alembic/versions/0005_account_tokens.py alembic/versions/0006_reminder_soft_delete.py
         working-directory: api
-      - run: uv run --frozen ruff check app tests scripts alembic/env.py alembic/versions/0002_auth.py alembic/versions/0003_reminders.py alembic/versions/0004_whatsapp_delivery.py alembic/versions/0005_account_tokens.py
+      - run: uv run --frozen ruff check app tests scripts alembic/env.py alembic/versions/0002_auth.py alembic/versions/0003_reminders.py alembic/versions/0004_whatsapp_delivery.py alembic/versions/0005_account_tokens.py alembic/versions/0006_reminder_soft_delete.py
         working-directory: api
       - run: uv run --frozen pyright
         working-directory: api

@@ -18,12 +18,13 @@ def claim_due(db: Session, limit: int = 50, lease_seconds: int = 90) -> list[UUI
         db.scalars(
             select(Reminder)
             .where(
+                Reminder.deleted_at.is_(None),
                 or_(
                     (Reminder.status == "scheduled")
                     & (Reminder.scheduled_at_utc <= moment),
                     (Reminder.status == "processing")
                     & (Reminder.lease_until <= moment),
-                )
+                ),
             )
             .order_by(Reminder.scheduled_at_utc, Reminder.id)
             .limit(limit)
@@ -42,7 +43,7 @@ def fire_claimed(db: Session, reminder_id: UUID) -> bool:
     row = db.scalar(
         select(Reminder).where(Reminder.id == reminder_id).with_for_update()
     )
-    if row is None or row.status != "processing":
+    if row is None or row.deleted_at is not None or row.status != "processing":
         db.rollback()
         return False
     moment = database_now(db)
