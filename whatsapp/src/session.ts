@@ -53,6 +53,7 @@ export class WhatsAppSession {
       this.saveQueue = this.saveQueue.then(saveCreds);
       void this.saveQueue.catch(() => {
         this.connected = false;
+        process.stderr.write('WhatsApp credential persistence failed.\n');
         socket.end(new Error('Credential persistence failed'));
         process.exit(1);
       });
@@ -67,6 +68,7 @@ export class WhatsAppSession {
         if (code === DisconnectReason.loggedOut) return;
         this.reconnectTimer = setTimeout(() => {
           void this.saveQueue.then(() => this.connect()).catch(() => {
+            process.stderr.write('WhatsApp reconnect failed.\n');
             process.exit(1);
           });
         }, 3000);
