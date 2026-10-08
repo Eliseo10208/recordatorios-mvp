@@ -9,12 +9,12 @@ from typing import cast
 from uuid import UUID
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import and_, func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.auth_service import AuthProblem
-from app.db import Reminder, User
+from app.db import DeliveryAttempt, Reminder, User
 from app.pagination import decode_cursor, encode_cursor
 from app.reminder_schemas import (
     ReminderCreate,
@@ -102,6 +102,8 @@ def create_reminder(
     if existing:
         if existing.create_hash != digest:
             raise AuthProblem(409, "Idempotency key already used")
+        if existing.deleted_at is not None:
+            raise AuthProblem(409, "Idempotency key belongs to a removed reminder")
         return public_reminder(existing), False
     schedule = preview(db, payload)
     if payload.send_whatsapp:
@@ -134,6 +136,10 @@ def create_reminder(
             raise
         if existing.create_hash != digest:
             raise AuthProblem(409, "Idempotency key already used") from None
+        if existing.deleted_at is not None:
+            raise AuthProblem(
+                409, "Idempotency key belongs to a removed reminder"
+            ) from None
         return public_reminder(existing), False
     db.refresh(row)
     result = public_reminder(row)
@@ -143,7 +149,9 @@ def create_reminder(
 
 def owned(db: Session, user: User, reminder_id: UUID, lock: bool = False) -> Reminder:
     query = select(Reminder).where(
-        Reminder.id == reminder_id, Reminder.user_id == user.id
+        Reminder.id == reminder_id,
+        Reminder.user_id == user.id,
+        Reminder.deleted_at.is_(None),
     )
     if lock:
         query = query.with_for_update()
@@ -198,25 +206,54 @@ def cancel_reminder(
     return public_reminder(row)
 
 
+def delete_reminder(db: Session, user: User, reminder_id: UUID, version: int) -> None:
+    row = owned(db, user, reminder_id, lock=True)
+    if row.status == "processing" or row.version != version:
+        raise AuthProblem(409, "Reminder changed")
+    moment = database_now(db)
+    row.deleted_at = moment
+    row.updated_at = moment
+    row.version += 1
+    db.execute(
+        update(DeliveryAttempt)
+        .where(
+            DeliveryAttempt.reminder_id == row.id,
+            DeliveryAttempt.status == "pending",
+        )
+        .values(
+            status="canceled",
+            lease_until=None,
+            next_attempt_at=None,
+            updated_at=moment,
+        )
+    )
+    db.commit()
+
+
 def list_reminders(
     db: Session, user: User, status: str, limit: int, cursor: str | None
 ) -> ReminderPage:
     if status == "upcoming":
         query = select(Reminder).where(
             Reminder.user_id == user.id,
+            Reminder.deleted_at.is_(None),
             Reminder.status.in_(("scheduled", "processing")),
         )
         column = Reminder.scheduled_at_utc
         ascending = True
     elif status == "fired":
         query = select(Reminder).where(
-            Reminder.user_id == user.id, Reminder.status == "fired"
+            Reminder.user_id == user.id,
+            Reminder.deleted_at.is_(None),
+            Reminder.status == "fired",
         )
         column = Reminder.fired_at
         ascending = False
     else:
         query = select(Reminder).where(
-            Reminder.user_id == user.id, Reminder.status == "canceled"
+            Reminder.user_id == user.id,
+            Reminder.deleted_at.is_(None),
+            Reminder.status == "canceled",
         )
         column = Reminder.canceled_at
         ascending = False

@@ -1,37 +1,49 @@
 # Recordatorios
 
 Aplicación web para programar recordatorios personales. Cada recordatorio crea
-un aviso dentro de la app y, de forma opcional, puede generar una notificación
-Web Push y una copia por WhatsApp.
+un aviso dentro de la app y puede enviar una copia por WhatsApp. Web Push está
+previsto, pero aún no se implementa.
 
 WhatsApp usa un único emisor conectado y administrado por el equipo.
 Los usuarios no conectan sus cuentas: sólo registran el número donde quieren
 recibir avisos y aceptan ese canal. El worker consume su contrato HTTP.
 
-## Estado
+## Estado de la entrega
 
-El emisor `whatsapp/`, la API y el worker están desplegados en Render. El
-frontend está publicado en [Vercel](https://recordatorios-web-one.vercel.app).
-Este corte integra registro, inicio de sesión, programación, bandeja interna y
-envíos de WhatsApp desde el worker.
-Web Push sigue pendiente. La verificación y recuperación por correo se preparan
-en `feature/account-email` y requieren la release `0.3.0` para producción.
+| Componente | URL pública | Comprobación del 8 de octubre de 2026 |
+|---|---|---|
+| Frontend | [Iniciar sesión](https://recordatorios-web-one.vercel.app/login) | La página respondió HTTP 200. |
+| API | [OpenAPI](https://recordatorios-api.onrender.com/docs) | `/readyz` y `/openapi.json` respondieron HTTP 200. |
+| Worker | [Disponibilidad](https://recordatorios-worker.onrender.com/readyz) | `/readyz` respondió HTTP 200. |
+| Emisor WhatsApp | [Disponibilidad](https://recordatorios-whatsapp-kxia.onrender.com/readyz) | `/readyz` respondió HTTP 200. |
+| PostgreSQL | Neon | La cadena de conexión es privada; el [esquema implementado](docs/ESQUEMA_IMPLEMENTADO.md) está documentado en el repo. |
 
-## Flujo previsto del MVP
+El código de `main` incluye cuentas con JWT, verificación y recuperación por
+correo, recordatorios, eliminación lógica, bandeja interna y despacho por
+WhatsApp. La verificación anterior confirma rutas y disponibilidad puntual;
+no prueba un envío real de correo ni la entrega de un mensaje nuevo. El estado
+del worker puede cambiar; `/readyz=200` sólo confirma un ciclo reciente.
+**El texto de cada recordatorio puede servir como nota, pero exige fecha y hora;
+no hay modo de nota sin aviso. Web Push aún no está implementado.**
+
+Consulta el [estado detallado de la entrega](docs/ESTADO_ENTREGA.md) para ver
+qué funciones están en el código, cuáles se comprobaron en producción y qué
+límites tiene esta interpretación del enunciado de la prueba.
+
+## Flujo implementado de recordatorios
 
 ```text
 crear recordatorio
   → guardarlo en PostgreSQL
   → worker reclama el vencimiento
   → crear notificación interna
-  → intentar Web Push si existe permiso
   → enviar { phone, message } al servicio WhatsApp si el usuario lo activó
 ```
 
-La notificación interna es la fuente de verdad. Un fallo de Push o WhatsApp no
-elimina el recordatorio ni la notificación de la app.
+La notificación interna es la fuente de verdad. Un fallo de WhatsApp no elimina
+el recordatorio ni la notificación de la app. Web Push sigue como diseño futuro.
 
-## Stack previsto
+## Stack de la entrega
 
 - Next.js, React y TypeScript para frontend y BFF.
 - FastAPI, Pydantic y Python para API y reglas de negocio.
@@ -46,10 +58,48 @@ usa únicamente para apoyar el proceso de desarrollo.
 ## Documentación
 
 - [Especificación del MVP](docs/specs/MVP_RECORDATORIOS.md)
+- [Estado de la entrega y cobertura de la prueba](docs/ESTADO_ENTREGA.md)
+- [Esquema de la base de datos implementada](docs/ESQUEMA_IMPLEMENTADO.md)
 - [ADR: WhatsApp centralizado](docs/adr/ADR-0001-whatsapp-centralizado.md)
 - [Contrato HTTP del emisor](docs/contracts/WHATSAPP_V1.md)
+- [Vincular o cambiar el emisor WhatsApp](docs/operacion/WHATSAPP_EMISOR.md)
+- [Configurar Resend](docs/operacion/RESEND.md)
+- [Preparar Neon y roles](docs/operacion/NEON.md)
 - [Reglas para desarrollo asistido por IA](CLAUDE.md)
 - [Registro de prompts y tiempos](prompts/README.md)
+- [Estimación de tiempos y hitos de despliegue](prompts/TIEMPOS_ESTIMADOS.md)
+
+## Estructura y ejecución local
+
+| Ruta | Contenido |
+|---|---|
+| `web/` | Next.js, Auth.js, BFF y dashboard. |
+| `api/` | FastAPI, worker, modelos, migraciones y pruebas. |
+| `whatsapp/` | Emisor central con Baileys y pruebas de contrato. |
+| `docs/` | Estado de entrega, especificación, esquema, ADR y contrato. |
+| `prompts/` | Prompts reales; tiempos medidos y estimaciones retrospectivas separados. |
+
+Requiere Node.js 24, pnpm 11.19, Python 3.13, uv y PostgreSQL. Instala las
+dependencias desde la raíz con `pnpm install --frozen-lockfile` y desde `api/`
+con `uv sync --frozen`. Toma las variables necesarias de `api/.env.example` y
+`web/.env.example` y configúralas en el entorno de **cada proceso**; los
+comandos siguientes no cargan archivos `.env` automáticamente. Para una base
+local, usa conexiones PostgreSQL locales, claves JWT de prueba y secretos
+distintos para API y Auth.js. Aplica `uv run alembic upgrade head` desde `api/`
+con `MIGRATION_DATABASE_URL` antes de arrancar la aplicación.
+
+Arranca en terminales separadas, con sus variables de entorno configuradas:
+
+```bash
+cd api && uv run uvicorn app.main:app --port 8000
+cd api && uv run uvicorn app.worker_app:app --port 8001
+cd web && pnpm dev
+```
+
+La web local abre en `http://localhost:3000`. El emisor WhatsApp es opcional
+para crear recordatorios y recibir avisos internos; su puesta en marcha y
+vinculación se explican abajo. `api/.env.example` incluye valores ficticios,
+no credenciales válidas ni una configuración productiva.
 
 ## Servicio WhatsApp local
 
@@ -88,6 +138,12 @@ pnpm --filter @recordatorios/whatsapp build
 pnpm --filter @recordatorios/whatsapp start
 ```
 
+Para que otro desarrollador use **su propio WhatsApp como emisor**, consulta
+la [guía de vinculación y reemplazo](docs/operacion/WHATSAPP_EMISOR.md): una
+base nueva permite vincularlo directamente; en una instalación existente
+`pnpm pair` restaura el emisor anterior hasta que se retire su sesión de forma
+controlada.
+
 `pnpm --filter @recordatorios/whatsapp db:check` verifica la conexión del rol
 restringido y la lectura del almacén cifrado sin imprimir credenciales.
 
@@ -107,6 +163,10 @@ El registro inicia sesión automáticamente. El correo queda pendiente de
 verificación hasta consumir un enlace válido.
 
 ## Correo de cuenta
+
+La [guía de Resend](docs/operacion/RESEND.md) explica cómo otro desarrollador
+verifica su dominio, configura su API key y remitente y activa las rutas de
+verificación y recuperación en su despliegue.
 
 `0005_account_tokens` guarda sólo SHA-256 de tokens aleatorios de 32 bytes.
 La verificación vence a las 24 horas y la recuperación a los 30 minutos.
@@ -205,6 +265,44 @@ posterior, sin ejecutar un downgrade destructivo.
 
 ## Avisos por WhatsApp
 
+### Número de cada cuenta de la app
+
+Otra persona puede [registrar su propia cuenta](https://recordatorios-web-one.vercel.app/register)
+o [iniciar sesión](https://recordatorios-web-one.vercel.app/login) y abrir
+**WhatsApp** en el dashboard. Allí escribe su número con código de país, acepta
+el consentimiento y pulsa **Guardar número**. Después puede activar
+**Enviar también una copia por WhatsApp** al crear un recordatorio. El número
+configurado es un **destino receptor**, vinculado a su cuenta de la app; no es
+una sesión de WhatsApp ni convierte su teléfono en emisor.
+
+Cada cuenta admite un solo destino activo. Para cambiarlo, guarda otro número
+en esa misma pantalla; reemplaza el anterior y cancela los envíos pendientes
+al destino viejo. **Desactivar WhatsApp** elimina el número activo y quita la
+preferencia de los recordatorios programados. Dos cuentas pueden tener números
+distintos, pero el mismo número no puede estar activo en ambas: la segunda
+recibe un conflicto hasta que la primera lo desactive. Para México, `+52` y
+`+521` con los mismos diez dígitos se consideran el mismo destino.
+
+Esta opción aparece sólo si la API tiene `WHATSAPP_ENABLED=true` y una
+`WHATSAPP_PHONE_KEY` válida. La app pide consentimiento, pero no comprueba la
+propiedad del teléfono mediante OTP. La disponibilidad HTTP de los servicios
+no confirma por sí sola que el flujo con una cuenta real esté habilitado en
+producción. Consulta el [estado de entrega](docs/ESTADO_ENTREGA.md).
+
+### Sesión emisora del proyecto
+
+Todos los avisos salen de **una sola cuenta emisora** administrada por el
+equipo. El proyecto la vincula una vez con el QR de `pnpm pair` en un terminal
+local y guarda la sesión cifrada en Neon. La app no ofrece QR ni inicio de
+sesión de WhatsApp para cada usuario. Permitir que cada persona envíe desde su
+propia cuenta requeriría otro diseño de sesiones, permisos, almacenamiento y
+operación; está fuera del alcance de la
+[decisión actual](docs/adr/ADR-0001-whatsapp-centralizado.md).
+Sí se puede **sustituir el único emisor de toda la instalación**: otra persona
+vincula su teléfono después de retirar la sesión anterior siguiendo
+[WHATSAPP_EMISOR.md](docs/operacion/WHATSAPP_EMISOR.md). Esto no crea un emisor
+distinto para cada usuario.
+
 `0004_whatsapp_delivery` añade destinos cifrados e intentos de envío. Cada
 usuario registra un número E.164 con consentimiento explícito v1. La API
 devuelve sólo los últimos cuatro dígitos; al desactivar el canal borra el
@@ -234,13 +332,18 @@ minuto en PostgreSQL. La API y el worker se despliegan por separado desde
 
 ## Despliegue de API y worker
 
+La [guía de Neon](docs/operacion/NEON.md) reúne el orden de migraciones, roles,
+conexiones directas y comprobaciones para una base nueva o una rama separada.
+
 `render.yaml` define dos Web Services Free con raíz `api/` y Python 3.13.
 El servicio API ejecuta `app.main:app`; el worker ejecuta `app.worker_app:app`
 y consulta vencimientos cada diez segundos mientras esté activo. Ambos usan
 la conexión **directa** de Neon de `recordatorios_app`, nunca la credencial de
 migración. Antes de desplegar, crea un punto de recuperación en Neon, comprueba
-que `alembic_version` sea `0001_whatsapp`, aplica `0002`–`0004` una vez con
-`MIGRATION_DATABASE_URL` fuera de Render y verifica `0004_whatsapp_delivery`.
+la versión actual de `alembic_version` y aplica una sola vez las migraciones
+pendientes con `MIGRATION_DATABASE_URL` fuera de Render. El head del código
+actual es `0006_reminder_soft_delete`; compruébalo antes de desplegar el
+worker y confirma después `/readyz=200`.
 
 Después de migrar, ejecuta `api/scripts/provision_app_role.py` con
 `MIGRATION_DATABASE_URL` y `APP_DB_PASSWORD` aleatoria de al menos 32
@@ -270,7 +373,8 @@ tablas aditivas sin uso hasta revisión, sin ejecutar un downgrade destructivo.
 
 El proyecto `recordatorios-web` está conectado al repositorio de GitHub, sigue
 `main` para producción y usa `web/` como Root Directory, Next.js y Node 24.
-Su dominio público es `https://recordatorios-web-one.vercel.app`. Configura
+Su [pantalla de inicio de sesión](https://recordatorios-web-one.vercel.app/login)
+está publicada en `https://recordatorios-web-one.vercel.app`. Configura
 estas variables sólo en el entorno Production de Vercel:
 
 - `API_BASE_URL=https://recordatorios-api.onrender.com`

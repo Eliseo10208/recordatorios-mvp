@@ -13,6 +13,7 @@ from sqlalchemy import create_engine, func, select, update
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.db import Notification, Reminder, User
+from app.reminder_service import delete_reminder
 from app.reminder_worker import claim_due, fire_claimed, run_once
 
 
@@ -109,4 +110,32 @@ def test_expired_claim_recovers_after_crash(factory: sessionmaker[Session]) -> N
                 )
             )
             == 1
+        )
+
+
+def test_delete_lock_excludes_concurrent_worker_claim(
+    factory: sessionmaker[Session],
+) -> None:
+    reminder_id = due_reminder(factory)
+    with factory() as db:
+        row = db.scalar(
+            select(Reminder).where(Reminder.id == reminder_id).with_for_update()
+        )
+        assert row is not None
+        owner = db.get(User, row.user_id)
+        assert owner is not None
+        with ThreadPoolExecutor(max_workers=1) as pool:
+            assert pool.submit(run_once, factory).result(timeout=10) == 0
+        delete_reminder(db, owner, reminder_id, row.version)
+    with factory() as db:
+        assert run_once(factory) == 0
+        saved = db.get(Reminder, reminder_id)
+        assert saved and saved.deleted_at is not None
+        assert (
+            db.scalar(
+                select(func.count(Notification.id)).where(
+                    Notification.reminder_id == reminder_id
+                )
+            )
+            == 0
         )

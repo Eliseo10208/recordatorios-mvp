@@ -2,11 +2,11 @@
 
 ## 1. Propósito y alcance
 
-Este repositorio contiene una aplicación web pública de recordatorios construida para una prueba técnica. Debe ser fácil de instalar, revisar, probar, desplegar y mantener. Es un monorepositorio para el frontend, la API, el worker de programación, la integración de WhatsApp, las migraciones, los contratos y la documentación. No es una aplicación de notas: el flujo principal es programar un aviso y recibirlo dentro de la app, con Web Push y WhatsApp como entregas adicionales opcionales.
+Este repositorio contiene una aplicación web pública construida para una prueba técnica de notas y recordatorios. Debe ser fácil de instalar, revisar, probar, desplegar y mantener. Es un monorepositorio para el frontend, la API, el worker de programación, la integración de WhatsApp, las migraciones, los contratos y la documentación. El corte actual guarda texto personal en recordatorios con fecha y hora obligatorias y ofrece copias opcionales por WhatsApp. No hay modo de nota sin aviso; Web Push sigue pendiente.
 
 La IA se usa exclusivamente durante el desarrollo: análisis, planificación, programación, generación de pruebas y revisión. La aplicación desplegada no llama modelos, no usa RAG y no ejecuta agentes. **OpenAPI** es la especificación abierta y el contrato de la API; no es OpenAI ni implica una dependencia de IA.
 
-La definición funcional canónica está en [docs/specs/MVP_RECORDATORIOS.md](docs/specs/MVP_RECORDATORIOS.md). La decisión del emisor único está en [docs/adr/ADR-0001-whatsapp-centralizado.md](docs/adr/ADR-0001-whatsapp-centralizado.md). Si el código futuro contradice esos documentos, no cambies silenciosamente el comportamiento: actualiza la spec o crea un ADR con aprobación humana.
+La definición funcional canónica está en [docs/specs/MVP_RECORDATORIOS.md](docs/specs/MVP_RECORDATORIOS.md); el [estado de la entrega](docs/ESTADO_ENTREGA.md) distingue código, disponibilidad puntual y pendientes, y el [esquema implementado](docs/ESQUEMA_IMPLEMENTADO.md) distingue las tablas actuales del diseño objetivo. La decisión del emisor único está en [docs/adr/ADR-0001-whatsapp-centralizado.md](docs/adr/ADR-0001-whatsapp-centralizado.md). Si el código futuro contradice esos documentos, no cambies silenciosamente el comportamiento: actualiza la spec o crea un ADR con aprobación humana.
 
 ## 2. Stack y destinos previstos
 
@@ -136,7 +136,7 @@ Compara el resultado con la spec y los criterios de aceptación. Revisa caminos 
 - Ejecutar pruebas; nunca confiar sólo en la explicación del modelo.
 - Registrar en el PR qué herramienta se usó y qué decisiones tomó la persona.
 - Registrar en /prompts/antes/, /prompts/durante/ y /prompts/después/ los prompts reales utilizados en cada etapa, retirando secretos, tokens y datos personales e indicando cualquier redacción.
-- Registrar en /prompts/tiempos.csv la duración real de cada etapa; no estimar ni reconstruir tiempos que no se midieron.
+- Registrar en /prompts/tiempos.csv la duración real de cada etapa; no presentar estimaciones como mediciones. Si una persona pide una reconstrucción retrospectiva, guardarla por separado con fuentes, método, incertidumbre y la etiqueta «aproximada».
 - Corregir o rechazar propuestas innecesarias, inseguras o fuera de alcance.
 
 ### Prohibido
@@ -153,7 +153,7 @@ Los prompts de desarrollo no se empaquetan en Docker, el bundle web ni producci�
 
 ### Registro de prompts y tiempos
 
-/prompts/README.md define cómo documentar los prompts utilizados antes, durante y después de cada tarea. Guardar el texto realmente usado, la etapa y una referencia a la tarea; no sustituirlo por un prompt idealizado ni incluir instrucciones internas no compartibles. Completar /prompts/tiempos.csv al cerrar la tarea con tiempos medidos por etapa. Si una etapa no ocurrió o no se midió, registrarlo explícitamente sin inventar una duración.
+/prompts/README.md define cómo documentar los prompts utilizados antes, durante y después de cada tarea. Guardar el texto realmente usado, la etapa y una referencia a la tarea; no sustituirlo por un prompt idealizado ni incluir instrucciones internas no compartibles. Completar /prompts/tiempos.csv al cerrar la tarea con tiempos medidos por etapa. Si una etapa no ocurrió o no se midió, registrarlo explícitamente sin inventar una duración medida. Las aproximaciones solicitadas se conservan aparte en /prompts/tiempos_estimados.csv y se explican en /prompts/TIEMPOS_ESTIMADOS.md.
 
 ## 8. Comandos oficiales previstos
 

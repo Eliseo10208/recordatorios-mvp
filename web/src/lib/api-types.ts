@@ -50,7 +50,8 @@ export interface paths {
         get: operations["get_route_api_v1_reminders__reminder_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Route */
+        delete: operations["delete_route_api_v1_reminders__reminder_id__delete"];
         options?: never;
         head?: never;
         /** Edit Route */
@@ -992,6 +993,120 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ReminderPublic"];
                 };
+            };
+            /** @description Problem response */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** Type */
+                        type: string;
+                        /** Title */
+                        title: string;
+                        /** Status */
+                        status: number;
+                        /** Detail */
+                        detail: string;
+                        /** Instance */
+                        instance: string;
+                        /** Traceid */
+                        traceId: string;
+                    };
+                };
+            };
+            /** @description Problem response */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** Type */
+                        type: string;
+                        /** Title */
+                        title: string;
+                        /** Status */
+                        status: number;
+                        /** Detail */
+                        detail: string;
+                        /** Instance */
+                        instance: string;
+                        /** Traceid */
+                        traceId: string;
+                    };
+                };
+            };
+            /** @description Problem response */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** Type */
+                        type: string;
+                        /** Title */
+                        title: string;
+                        /** Status */
+                        status: number;
+                        /** Detail */
+                        detail: string;
+                        /** Instance */
+                        instance: string;
+                        /** Traceid */
+                        traceId: string;
+                    };
+                };
+            };
+            /** @description Problem response */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": {
+                        /** Type */
+                        type: string;
+                        /** Title */
+                        title: string;
+                        /** Status */
+                        status: number;
+                        /** Detail */
+                        detail: string;
+                        /** Instance */
+                        instance: string;
+                        /** Traceid */
+                        traceId: string;
+                    };
+                };
+            };
+        };
+    };
+    delete_route_api_v1_reminders__reminder_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                reminder_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VersionInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Problem response */
             401: {

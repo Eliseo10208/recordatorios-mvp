@@ -7,9 +7,11 @@ import { useCallback, useEffect, useState } from "react";
 import { NotificationInbox } from "@/features/reminders/notification-inbox";
 import { LoadingCards } from "@/features/reminders/loading-cards";
 import { ReminderCard } from "@/features/reminders/reminder-card";
+import { ReminderDetail } from "@/features/reminders/reminder-detail";
 import { ReminderForm } from "@/features/reminders/reminder-form";
 import { useReminderFeed } from "@/features/reminders/use-reminder-feed";
 import { WhatsAppSettings } from "@/features/reminders/whatsapp-settings";
+import { timeZoneLabel } from "@/features/reminders/time-zones";
 import type { components } from "@/lib/api-types";
 import { authenticatedFetch } from "@/lib/reminder-client";
 
@@ -26,7 +28,7 @@ const labels: Record<Status, string> = {
 };
 
 function displayTime(item: Reminder): string {
-  return `${item.local_date} · ${item.local_time} · ${item.timezone}`;
+  return `${item.local_date} · ${item.local_time} · ${timeZoneLabel(item.timezone)}`;
 }
 
 function whatsappLabel(item: Reminder): string {
@@ -169,6 +171,38 @@ export function DashboardClient() {
       setError(
         "No se pudo cancelar. Actualiza el recordatorio e inténtalo de nuevo.",
       );
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function deleteReminder() {
+    if (!selected) return;
+    setWorking(true);
+    try {
+      const response = await authenticatedFetch(
+        `/api/reminders/${selected.id}`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ expected_version: selected.version }),
+        },
+      );
+      if (response.status === 409) {
+        await openReminder(selected.id);
+        setError(
+          "El recordatorio cambió. Revisa su estado e inténtalo de nuevo.",
+        );
+        return;
+      }
+      if (!response.ok) throw new Error("delete unavailable");
+      setSelected(null);
+      setView("list");
+      setError("");
+      feed.retry();
+      void loadCount();
+    } catch {
+      setError("No se pudo eliminar el recordatorio. Inténtalo de nuevo.");
     } finally {
       setWorking(false);
     }
@@ -406,54 +440,21 @@ export function DashboardClient() {
         )}
 
         {view === "detail" && selected && (
-          <section className="panel" aria-labelledby="detail-heading">
-            <p className="eyebrow">DETALLE DEL AVISO</p>
-            <h2 id="detail-heading">{selected.message}</h2>
-            <p className="muted">{displayTime(selected)}</p>
-            <p className="status-pill">
-              Estado:{" "}
-              {selected.status === "processing"
-                ? "En proceso"
-                : selected.status}
-            </p>
-            <p className="field-hint">
-              Versión {selected.version} · Dentro de la app
-            </p>
-            {(selected.send_whatsapp || selected.whatsapp_status) && (
-              <p className="field-hint">
-                WhatsApp: {whatsappLabel(selected)} ·{" "}
-                {destination?.masked_number ?? "número desactivado"}
-              </p>
-            )}
-            <div className="form-actions">
-              <button
-                className="secondary-button"
-                onClick={() => setView("list")}
-              >
-                Volver a la lista
-              </button>
-              {selected.status === "scheduled" && (
-                <>
-                  <button
-                    className="secondary-button"
-                    onClick={() => {
-                      setEditing(true);
-                      setView("form");
-                    }}
-                  >
-                    Editar
-                  </button>
-                  <button
-                    className="danger-button"
-                    onClick={() => void cancelReminder()}
-                    disabled={working}
-                  >
-                    Cancelar recordatorio
-                  </button>
-                </>
-              )}
-            </div>
-          </section>
+          <ReminderDetail
+            key={`${selected.id}-${selected.version}`}
+            item={selected}
+            timeLabel={displayTime(selected)}
+            whatsappLabel={whatsappLabel(selected)}
+            maskedNumber={destination?.masked_number}
+            working={working}
+            onBack={() => setView("list")}
+            onEdit={() => {
+              setEditing(true);
+              setView("form");
+            }}
+            onCancel={() => void cancelReminder()}
+            onDelete={() => void deleteReminder()}
+          />
         )}
 
         {view === "inbox" && (

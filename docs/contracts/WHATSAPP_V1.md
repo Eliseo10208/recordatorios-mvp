@@ -1,6 +1,7 @@
 # Contrato v1 del emisor WhatsApp
 
-- Estado: aprobado para implementación del MVP.
+- Estado: implementado en `whatsapp/` y consumido por el worker; la entrega a un
+  teléfono real no se comprobó en la revisión documental del 8 de octubre.
 - Dueño: servicio whatsapp/.
 - Consumidor: worker del backend Python.
 - Transporte: HTTPS público de Render Free con autenticación Bearer.
@@ -85,3 +86,6 @@ automáticamente un unknown y conserva la notificación interna.
 - La vinculación inicial se hace con una herramienta local que muestra un QR
   únicamente en el terminal del operador. Se detiene antes de arrancar Render.
 - Ninguna prueba automatizada envía mensajes reales.
+
+La vinculación inicial y el cambio de la cuenta emisora central se describen
+en [WHATSAPP_EMISOR.md](../operacion/WHATSAPP_EMISOR.md).

@@ -1,0 +1,4 @@
+etapa,horas_estimadas_min,horas_estimadas_max,minutos_medidos_parciales,fuente,observaciones
+antes,4,5,,estimacion_retrospectiva_usuario,Planificacion 4 a 5 horas; no cronometraje
+durante,,3,,estimacion_retrospectiva_usuario,Desarrollo aproximadamente 3 horas o menos; limite superior aproximado
+después,2,3,17.27,estimacion_retrospectiva_usuario_y_medicion_parcial,Revision y despliegue 2 a 3 horas segun usuario; 17.27 minutos cronometrados dentro de esa etapa

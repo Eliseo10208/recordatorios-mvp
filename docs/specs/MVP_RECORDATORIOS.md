@@ -1,9 +1,16 @@
 # MVP — Recordatorios multicanal
 
-- Estado: aprobado para planificación
+- Estado: diseño objetivo; implementación parcial
 - Fecha: 7 de octubre de 2026
 - Alcance: prueba técnica
 - IA en producción: no
+- App desplegada: [iniciar sesión](https://recordatorios-web-one.vercel.app/login)
+
+El estado verificable del corte entregado está en
+[Estado de la entrega](../ESTADO_ENTREGA.md). Las secciones de Web Push, PWA y
+suscripciones describen el objetivo de producto, no funciones disponibles en
+`main`. El PDF no exige notas como entidad separada: el texto de cada
+recordatorio puede usarse como nota programada, pero no se guarda sin aviso.
 
 ## 1. Definición del producto
 
@@ -12,8 +19,11 @@ siempre crea una notificación dentro de la app. Además puede mostrar una Web
 Push, si el usuario dio permiso, y enviar una copia por WhatsApp, si el usuario
 registró un número y activó ese canal.
 
-No es una aplicación de notas. Su valor consiste en entregar un aviso a la hora
-correcta, conservarlo en una bandeja propia y mostrar qué ocurrió en cada canal.
+El corte implementado guarda notas breves como texto de recordatorios, siempre
+con fecha y hora. El PDF pide notas y recordatorios, sin definir si deben ser
+entidades distintas; la app no ofrece notas libres sin programación.
+El valor de este corte consiste en entregar un aviso a la hora correcta,
+conservarlo en una bandeja propia y mostrar qué ocurrió en cada canal.
 
 ### Jerarquía de canales
 
@@ -37,6 +47,13 @@ Cada usuario sólo puede:
 2. aceptar recibir recordatorios por ese medio;
 3. activar o desactivar WhatsApp para cada recordatorio;
 4. cambiar o eliminar su número.
+
+En el corte actual, otra persona puede crear su propia cuenta de la app y
+registrar un destino distinto. Esto no vincula una sesión personal de
+WhatsApp: todos los mensajes siguen saliendo del emisor central. Un destino
+activo no puede repetirse entre cuentas; cambiarlo reemplaza el anterior.
+La [guía de uso y sus límites](../../README.md#número-de-cada-cuenta-de-la-app)
+explica el flujo implementado.
 
 Un número destino activo sólo puede estar asignado a una cuenta a la vez.
 Al desactivarlo, deja de reservarse para esa cuenta.
@@ -71,7 +88,7 @@ o no haber sido configurado. La aplicación necesita:
 - evitar duplicados ante reinicios o reintentos;
 - explicar el resultado sin prometer estados que no puede comprobar.
 
-## 5. Flujo principal
+## 5. Flujo principal objetivo
 
 ```mermaid
 flowchart TD
@@ -115,7 +132,7 @@ Al usarlo, el enlace queda consumido, el correo queda verificado y se revocan
 las sesiones anteriores. Resend sólo transporta los mensajes: FastAPI genera,
 valida y consume los tokens. La API key nunca llega al navegador.
 
-### 6.2 Primer acceso
+### 6.2 Primer acceso objetivo
 
 El primer acceso no se bloquea con permisos ni integraciones:
 
@@ -129,8 +146,8 @@ Opcional:
 [ Agregar mi número de WhatsApp ]
 ```
 
-El permiso de Web Push sólo se solicita después de que el usuario pulse una
-acción que explique su beneficio.
+El permiso de Web Push sólo se solicitaría después de que el usuario pulse una
+acción que explique su beneficio. Esa acción aún no existe en la web actual.
 
 ### 6.3 Crear recordatorio
 
@@ -139,7 +156,7 @@ Campos mínimos:
 - mensaje, requerido, máximo 280 caracteres;
 - fecha;
 - hora;
-- zona horaria IANA detectada, visible y editable;
+- zona horaria detectada y visible, con selector de ciudades y zonas; el identificador IANA se conserva para la API;
 - interruptor “También por WhatsApp”, disponible cuando existe un número activo.
 
 Si la hora local elegida no existe por un cambio de horario, se ajusta al
@@ -179,7 +196,7 @@ Los canales opcionales nunca impiden guardar.
 - persistencia entre sesiones y dispositivos;
 - polling corto en el MVP; WebSocket queda fuera del alcance.
 
-### 6.6 Configuración
+### 6.6 Configuración objetivo
 
 Tres bloques independientes:
 
@@ -188,7 +205,7 @@ Tres bloques independientes:
 3. **WhatsApp:** agregar, cambiar o desactivar el número destino y consultar el
    consentimiento registrado.
 
-## 7. Pantallas
+## 7. Pantallas objetivo
 
 - Registro, verificación de correo, inicio de sesión y recuperación de contraseña.
 - Dashboard de recordatorios.
@@ -200,7 +217,7 @@ Tres bloques independientes:
 Todas deben funcionar en móvil y escritorio, con teclado, foco visible, labels,
 mensajes anunciados y contraste WCAG 2.2 AA.
 
-## 8. Arquitectura
+## 8. Arquitectura objetivo
 
 ```mermaid
 flowchart LR
@@ -257,6 +274,10 @@ no se promete como garantía del plan gratuito.
 
 ## 9. Modelo de datos mínimo
 
+Este diagrama describe el diseño objetivo e incluye Web Push, aún pendiente.
+Las tablas creadas por las migraciones actuales se documentan en
+[Esquema implementado](../ESQUEMA_IMPLEMENTADO.md).
+
 ```mermaid
 erDiagram
     USERS ||--o{ REMINDERS : owns
@@ -310,6 +331,7 @@ erDiagram
         datetime lease_until
         datetime fired_at
         datetime canceled_at
+        datetime deleted_at
     }
 
     NOTIFICATIONS {
@@ -414,6 +436,14 @@ processing → scheduled  cuando vence la lease antes del commit
 fired significa que la notificación interna fue creada, no que WhatsApp fue
 entregado.
 
+Eliminar un recordatorio programado, disparado o cancelado fija `deleted_at`
+sin cambiar su estado ni borrar filas. Un recordatorio `processing` no puede
+eliminarse hasta que termine. Los recordatorios eliminados quedan fuera de las
+listas, el detalle y el reclamo del worker; sus avisos quedan fuera de la
+bandeja y del contador. Los intentos WhatsApp pendientes se cancelan y el
+despacho comprueba de nuevo `deleted_at` antes de enviar. Un envío ya iniciado
+puede terminar y conserva su resultado interno.
+
 ### Notificación interna
 
 ```text
@@ -503,7 +533,11 @@ Reglas:
 - ningún endpoint de whatsapp/ se expone al navegador;
 - ninguna prueba ordinaria envía mensajes reales.
 
-## 13. API pública propuesta
+## 13. API pública
+
+Las rutas siguientes figuran en el
+[OpenAPI generado](../../api/openapi.json) de `main`. Los identificadores de
+la lista son descriptivos; el contrato usa `reminder_id` y `notification_id`.
 
 ```text
 POST   /api/v1/auth/register
@@ -514,6 +548,7 @@ POST   /api/v1/auth/verify-email
 POST   /api/v1/auth/resend-verification
 POST   /api/v1/auth/forgot-password
 POST   /api/v1/auth/reset-password
+GET    /api/v1/auth/me
 
 GET    /api/v1/reminders
 POST   /api/v1/reminders/preview
@@ -521,19 +556,21 @@ POST   /api/v1/reminders
 GET    /api/v1/reminders/{reminderId}
 PATCH  /api/v1/reminders/{reminderId}
 POST   /api/v1/reminders/{reminderId}/cancel
+DELETE /api/v1/reminders/{reminderId}
 
 GET    /api/v1/notifications
 GET    /api/v1/notifications/unread-count
 POST   /api/v1/notifications/{notificationId}/read
 POST   /api/v1/notifications/read-all
 
-POST   /api/v1/push-subscriptions
-DELETE /api/v1/push-subscriptions/{subscriptionId}
-
 GET    /api/v1/notification-settings/whatsapp
 PUT    /api/v1/notification-settings/whatsapp
 DELETE /api/v1/notification-settings/whatsapp
 ```
+
+Las rutas `POST /api/v1/push-subscriptions` y
+`DELETE /api/v1/push-subscriptions/{subscriptionId}` pertenecen al diseño
+objetivo; no están implementadas ni aparecen en OpenAPI.
 
 FastAPI valida identidad y ownership en cada operación. El cliente no envía un
 user_id que la API tome como autoridad.
@@ -541,9 +578,12 @@ user_id que la API tome como autoridad.
 En el corte del núcleo, el formulario envía fecha local (`YYYY-MM-DD`), hora
 (`HH:mm`) y zona IANA. La vista previa y las escrituras calculan la hora UTC
 en la API. La creación exige `Idempotency-Key` UUID; edición y cancelación
-exigen la versión observada. Las listas usan cursor y como máximo 100 elementos
-por página. Este corte genera sólo notificaciones internas: Push y WhatsApp
-siguen sus entregas independientes.
+exigen la versión observada. `DELETE` también exige `expected_version` en JSON:
+responde 204 al ocultar, 404 si no existe, es ajeno o ya se ocultó, y 409 ante
+versión obsoleta o estado `processing`. La clave de creación de un recordatorio
+oculto permanece reservada y su reutilización responde 409. Las listas usan
+cursor y como máximo 100 elementos por página. La notificación interna es
+canónica; WhatsApp se despacha por separado. Push sigue pendiente.
 
 ## 14. Seguridad y privacidad
 
@@ -575,7 +615,11 @@ El MVP valida formato y consentimiento del número, pero no demuestra propiedad.
 Una verificación OTP puede añadirse después si el threat model lo exige; no es
 una conexión de cuenta de WhatsApp.
 
-## 15. Criterios de aceptación
+## 15. Criterios de aceptación del diseño objetivo
+
+Las casillas son criterios de la especificación, no una declaración de que una
+prueba productiva haya pasado. La cobertura actual y sus límites están en
+[Estado de la entrega](../ESTADO_ENTREGA.md).
 
 ### Núcleo
 
@@ -634,7 +678,7 @@ una conexión de cuenta de WhatsApp.
 
 ## 16. No objetivos
 
-- notas, carpetas, etiquetas o editor enriquecido;
+- carpetas, etiquetas o editor enriquecido;
 - IA, RAG, embeddings o agentes en producción;
 - recordatorios recurrentes o snooze;
 - email para avisos o campañas; sólo se permiten correos transaccionales de
@@ -650,7 +694,7 @@ una conexión de cuenta de WhatsApp.
 - WebSockets;
 - garantía de entrega al segundo o exactly-once externo.
 
-## 17. Entregas verticales
+## 17. Entregas verticales previstas
 
 1. **Fundación:** monorepo, CI, registro, verificación y recuperación por
    correo, auth, PostgreSQL y migraciones.
@@ -659,12 +703,14 @@ una conexión de cuenta de WhatsApp.
 4. **WhatsApp:** número destino, opt-in, contrato HTTP y ledger.
 5. **Producción:** despliegues, secretos, observabilidad, E2E y rollback.
 
-Cada entrega debe producir un recorrido demostrable; no sólo tablas o endpoints.
+El código actual incluye fundación, núcleo y WhatsApp, con despliegues para
+web, API, worker y emisor. Push sigue pendiente. Cada entrega debe producir un
+recorrido demostrable; no sólo tablas o endpoints.
 
 ## 18. Definition of Done del MVP
 
 - [ ] Frontend, API, worker y servicio WhatsApp tienen despliegues documentados.
-- [ ] PostgreSQL está migrado y su esquema coincide con este documento.
+- [ ] PostgreSQL está migrado y coincide con el esquema implementado documentado.
 - [ ] El flujo crear → vencer → notificación interna funciona E2E.
 - [ ] Push degrada de forma segura.
 - [ ] WhatsApp usa el emisor central y números destino de usuarios con opt-in.

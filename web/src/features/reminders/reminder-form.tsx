@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { components } from "@/lib/api-types";
 import { authenticatedFetch } from "@/lib/reminder-client";
+import { timeZoneGroups, timeZoneLabel } from "./time-zones";
 
 type Reminder = components["schemas"]["ReminderPublic"];
 type Preview = components["schemas"]["SchedulePreview"];
@@ -36,11 +37,8 @@ export function ReminderForm({
   );
   const [localDate, setLocalDate] = useState(initial?.local_date ?? clock.day);
   const [localTime, setLocalTime] = useState(initial?.local_time ?? clock.hour);
-  const [timezone, setTimezone] = useState(
-    initial?.timezone ??
-      Intl.DateTimeFormat().resolvedOptions().timeZone ??
-      "UTC",
-  );
+  const [timezone, setTimezone] = useState(initial?.timezone ?? "");
+  const [zones, setZones] = useState<string[]>([]);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [previewState, setPreviewState] = useState<
     "loading" | "ready" | "error"
@@ -49,6 +47,27 @@ export function ReminderForm({
   const [saving, setSaving] = useState(false);
   const key = useRef<{ fingerprint: string; value: string } | null>(null);
   const savingRef = useRef(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const detected =
+        Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+      let supported: string[] = [];
+      try {
+        supported = Intl.supportedValuesOf?.("timeZone") ?? [];
+      } catch {
+        // The frequent choices and detected zone still work in older browsers.
+      }
+      setZones([detected, ...supported]);
+      if (!initial?.timezone) setTimezone(detected);
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [initial?.timezone]);
+
+  const zoneGroups = useMemo(
+    () => timeZoneGroups(timezone, zones),
+    [timezone, zones],
+  );
 
   useEffect(() => {
     let active = true;
@@ -211,16 +230,35 @@ export function ReminderForm({
           />
         </div>
       </div>
-      <label htmlFor="reminder-zone">Zona horaria IANA</label>
-      <input
+      <label htmlFor="reminder-zone">Zona horaria</label>
+      <select
         id="reminder-zone"
+        aria-describedby="reminder-zone-hint"
         value={timezone}
+        disabled={zones.length === 0}
         onChange={(event) => {
           setTimezone(event.target.value);
           setPreview(null);
         }}
         required
-      />
+      >
+        <option value="" disabled>
+          Detectando zona horaria…
+        </option>
+        {zoneGroups.map((group) => (
+          <optgroup key={group.name} label={group.name}>
+            {group.zones.map((zone) => (
+              <option key={zone} value={zone}>
+                {timeZoneLabel(zone)}
+              </option>
+            ))}
+          </optgroup>
+        ))}
+      </select>
+      <span id="reminder-zone-hint" className="field-hint">
+        Detectamos la zona de tu dispositivo. Cámbiala si el aviso será en otra
+        ciudad.
+      </span>
       <div className="preview-slot" aria-live="polite">
         {previewState === "loading" && (
           <div className="schedule-preview" role="status">
@@ -233,7 +271,7 @@ export function ReminderForm({
               Te avisaremos el {preview.local_date} a las {preview.local_time}
             </strong>
             <span>
-              {preview.timezone} · Dentro de la app
+              {timeZoneLabel(preview.timezone)} · Dentro de la app
               {sendWhatsApp ? " y por WhatsApp" : ""}
             </span>
             {preview.resolution === "gap_forward" && (
