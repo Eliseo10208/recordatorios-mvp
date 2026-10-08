@@ -80,6 +80,19 @@ class AuthRateLimit(Base):
     attempts: Mapped[int] = mapped_column(Integer)
 
 
+class AccountToken(Base):
+    __tablename__ = "account_tokens"
+    __table_args__ = (Index("ix_account_tokens_user_purpose", "user_id", "purpose"),)
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    purpose: Mapped[str] = mapped_column(String(20))
+    token_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class Reminder(Base):
     __tablename__ = "reminders"
     __table_args__ = (
