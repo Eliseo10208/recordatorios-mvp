@@ -67,7 +67,7 @@ usa únicamente para apoyar el proceso de desarrollo.
 - [Preparar Neon y roles](docs/operacion/NEON.md)
 - [Reglas para desarrollo asistido por IA](CLAUDE.md)
 - [Registro de prompts y tiempos](prompts/README.md)
-- [Estimación retrospectiva hasta el despliegue](prompts/TIEMPOS_ESTIMADOS.md)
+- [Estimación de tiempos y hitos de despliegue](prompts/TIEMPOS_ESTIMADOS.md)
 
 ## Estructura y ejecución local
 

@@ -93,10 +93,11 @@ recordatorios**. En el repositorio están el monorepo, la web y servicios
 desplegados, JWT, migraciones, [`CLAUDE.md`](../CLAUDE.md) y
 [`prompts/`](../prompts/README.md). El [log original](../prompts/tiempos.csv) conserva duraciones medidas cuando
 existen y marca las etapas no medidas. Por solicitud posterior se añadió una
-[estimación retrospectiva](../prompts/TIEMPOS_ESTIMADOS.md) desde los mensajes
-con hora hasta el despliegue: aproximadamente 10 h 51 min repartidas entre
-antes, durante y después. No equivale a horas trabajadas medidas; la mayoría
-de las tareas individuales sigue sin duración observada.
+[estimación retrospectiva corregida](../prompts/TIEMPOS_ESTIMADOS.md): la
+planificación tomó aproximadamente 4 a 5 horas, el desarrollo 3 horas o
+menos y la revisión/despliegue 2 a 3 horas, según el usuario. Son rangos, no
+duraciones cronometradas; la mayoría de las tareas individuales sigue sin
+duración total observada.
 El PDF no exige entidades separadas para notas y recordatorios. Esta entrega
 representa ambos en un registro con texto y aviso obligatorio; quien espere una
 nota sin fecha encontrará esa limitación. La disponibilidad HTTP no prueba
