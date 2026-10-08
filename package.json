@@ -3,10 +3,10 @@
   "private": true,
   "packageManager": "pnpm@11.19.0",
   "scripts": {
-    "format:check": "pnpm --filter @recordatorios/whatsapp format:check",
-    "lint": "pnpm --filter @recordatorios/whatsapp lint",
-    "typecheck": "pnpm --filter @recordatorios/whatsapp typecheck",
-    "test": "pnpm --filter @recordatorios/whatsapp test",
-    "build": "pnpm --filter @recordatorios/whatsapp build"
+    "format:check": "pnpm -r --if-present format:check",
+    "lint": "pnpm -r --if-present lint",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --if-present test",
+    "build": "pnpm -r --if-present build"
   }
 }

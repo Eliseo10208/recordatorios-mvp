@@ -1,0 +1,3 @@
+interface:
+  display_name: "Clean API Web"
+  short_description: "Run repository checks before a push"
