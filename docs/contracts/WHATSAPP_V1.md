@@ -86,3 +86,6 @@ automáticamente un unknown y conserva la notificación interna.
 - La vinculación inicial se hace con una herramienta local que muestra un QR
   únicamente en el terminal del operador. Se detiene antes de arrancar Render.
 - Ninguna prueba automatizada envía mensajes reales.
+
+La vinculación inicial y el cambio de la cuenta emisora central se describen
+en [WHATSAPP_EMISOR.md](../operacion/WHATSAPP_EMISOR.md).

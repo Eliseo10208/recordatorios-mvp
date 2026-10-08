@@ -46,6 +46,13 @@ Cada usuario sólo puede:
 3. activar o desactivar WhatsApp para cada recordatorio;
 4. cambiar o eliminar su número.
 
+En el corte actual, otra persona puede crear su propia cuenta de la app y
+registrar un destino distinto. Esto no vincula una sesión personal de
+WhatsApp: todos los mensajes siguen saliendo del emisor central. Un destino
+activo no puede repetirse entre cuentas; cambiarlo reemplaza el anterior.
+La [guía de uso y sus límites](../../README.md#número-de-cada-cuenta-de-la-app)
+explica el flujo implementado.
+
 Un número destino activo sólo puede estar asignado a una cuenta a la vez.
 Al desactivarlo, deja de reservarse para esa cuenta.
 

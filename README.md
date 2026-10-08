@@ -61,6 +61,9 @@ usa únicamente para apoyar el proceso de desarrollo.
 - [Esquema de la base de datos implementada](docs/ESQUEMA_IMPLEMENTADO.md)
 - [ADR: WhatsApp centralizado](docs/adr/ADR-0001-whatsapp-centralizado.md)
 - [Contrato HTTP del emisor](docs/contracts/WHATSAPP_V1.md)
+- [Vincular o cambiar el emisor WhatsApp](docs/operacion/WHATSAPP_EMISOR.md)
+- [Configurar Resend](docs/operacion/RESEND.md)
+- [Preparar Neon y roles](docs/operacion/NEON.md)
 - [Reglas para desarrollo asistido por IA](CLAUDE.md)
 - [Registro de prompts y tiempos](prompts/README.md)
 
@@ -133,6 +136,12 @@ pnpm --filter @recordatorios/whatsapp build
 pnpm --filter @recordatorios/whatsapp start
 ```
 
+Para que otro desarrollador use **su propio WhatsApp como emisor**, consulta
+la [guía de vinculación y reemplazo](docs/operacion/WHATSAPP_EMISOR.md): una
+base nueva permite vincularlo directamente; en una instalación existente
+`pnpm pair` restaura el emisor anterior hasta que se retire su sesión de forma
+controlada.
+
 `pnpm --filter @recordatorios/whatsapp db:check` verifica la conexión del rol
 restringido y la lectura del almacén cifrado sin imprimir credenciales.
 
@@ -152,6 +161,10 @@ El registro inicia sesión automáticamente. El correo queda pendiente de
 verificación hasta consumir un enlace válido.
 
 ## Correo de cuenta
+
+La [guía de Resend](docs/operacion/RESEND.md) explica cómo otro desarrollador
+verifica su dominio, configura su API key y remitente y activa las rutas de
+verificación y recuperación en su despliegue.
 
 `0005_account_tokens` guarda sólo SHA-256 de tokens aleatorios de 32 bytes.
 La verificación vence a las 24 horas y la recuperación a los 30 minutos.
@@ -250,6 +263,44 @@ posterior, sin ejecutar un downgrade destructivo.
 
 ## Avisos por WhatsApp
 
+### Número de cada cuenta de la app
+
+Otra persona puede [registrar su propia cuenta](https://recordatorios-web-one.vercel.app/register)
+o [iniciar sesión](https://recordatorios-web-one.vercel.app/login) y abrir
+**WhatsApp** en el dashboard. Allí escribe su número con código de país, acepta
+el consentimiento y pulsa **Guardar número**. Después puede activar
+**Enviar también una copia por WhatsApp** al crear un recordatorio. El número
+configurado es un **destino receptor**, vinculado a su cuenta de la app; no es
+una sesión de WhatsApp ni convierte su teléfono en emisor.
+
+Cada cuenta admite un solo destino activo. Para cambiarlo, guarda otro número
+en esa misma pantalla; reemplaza el anterior y cancela los envíos pendientes
+al destino viejo. **Desactivar WhatsApp** elimina el número activo y quita la
+preferencia de los recordatorios programados. Dos cuentas pueden tener números
+distintos, pero el mismo número no puede estar activo en ambas: la segunda
+recibe un conflicto hasta que la primera lo desactive. Para México, `+52` y
+`+521` con los mismos diez dígitos se consideran el mismo destino.
+
+Esta opción aparece sólo si la API tiene `WHATSAPP_ENABLED=true` y una
+`WHATSAPP_PHONE_KEY` válida. La app pide consentimiento, pero no comprueba la
+propiedad del teléfono mediante OTP. La disponibilidad HTTP de los servicios
+no confirma por sí sola que el flujo con una cuenta real esté habilitado en
+producción. Consulta el [estado de entrega](docs/ESTADO_ENTREGA.md).
+
+### Sesión emisora del proyecto
+
+Todos los avisos salen de **una sola cuenta emisora** administrada por el
+equipo. El proyecto la vincula una vez con el QR de `pnpm pair` en un terminal
+local y guarda la sesión cifrada en Neon. La app no ofrece QR ni inicio de
+sesión de WhatsApp para cada usuario. Permitir que cada persona envíe desde su
+propia cuenta requeriría otro diseño de sesiones, permisos, almacenamiento y
+operación; está fuera del alcance de la
+[decisión actual](docs/adr/ADR-0001-whatsapp-centralizado.md).
+Sí se puede **sustituir el único emisor de toda la instalación**: otra persona
+vincula su teléfono después de retirar la sesión anterior siguiendo
+[WHATSAPP_EMISOR.md](docs/operacion/WHATSAPP_EMISOR.md). Esto no crea un emisor
+distinto para cada usuario.
+
 `0004_whatsapp_delivery` añade destinos cifrados e intentos de envío. Cada
 usuario registra un número E.164 con consentimiento explícito v1. La API
 devuelve sólo los últimos cuatro dígitos; al desactivar el canal borra el
@@ -278,6 +329,9 @@ minuto en PostgreSQL. La API y el worker se despliegan por separado desde
 `main`, después de revisión humana y migraciones aplicadas una sola vez.
 
 ## Despliegue de API y worker
+
+La [guía de Neon](docs/operacion/NEON.md) reúne el orden de migraciones, roles,
+conexiones directas y comprobaciones para una base nueva o una rama separada.
 
 `render.yaml` define dos Web Services Free con raíz `api/` y Python 3.13.
 El servicio API ejecuta `app.main:app`; el worker ejecuta `app.worker_app:app`
