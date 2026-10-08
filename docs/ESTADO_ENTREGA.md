@@ -24,12 +24,12 @@ funcionen de extremo a extremo con una cuenta real.
 | Área | Implementado en `main` | Límite conocido |
 |---|---|---|
 | Cuenta | Registro, login, refresh, logout y perfil; verificación de correo, reenvío y recuperación de contraseña. | El envío real depende de Resend y su configuración productiva; no se hizo un envío en esta revisión. |
-| Recordatorios | Vista previa de fecha/hora/zona, creación idempotente, listas por estado y cursor, detalle, edición, cancelación y eliminación lógica. | No hay notas independientes ni recordatorios recurrentes. |
+| Recordatorios | Vista previa de fecha/hora/zona, creación idempotente, listas por estado y cursor, detalle, edición, cancelación y eliminación lógica. | Todo texto exige programación; no hay recordatorios recurrentes. |
 | Interfaz | Login, registro, recuperación, verificación y dashboard adaptable con tarjetas, formulario, detalle, bandeja y configuración de WhatsApp. | La comprobación pública anterior sólo confirma que `/login` carga; las pantallas autenticadas requieren un recorrido con cuenta. |
 | Avisos internos | Worker con reclamo durable; bandeja, contador y acciones para marcar uno o todos como leídos. | La puntualidad depende de que el worker permanezca activo; `/readyz=200` sólo indica un ciclo reciente. |
 | WhatsApp | Un destino cifrado por usuario con consentimiento, preferencia por recordatorio, ledger y despacho al emisor central. | `accepted` significa aceptación del servicio, no entrega al teléfono. No se probó un mensaje real en esta revisión. |
 | Web Push | No implementado. | No hay rutas, suscripciones, Service Worker ni tablas de Push. |
-| Notas | No implementadas. | El enunciado de la prueba solicita notas y recordatorios; la entrega actual cubre recordatorios. |
+| Notas integradas | El texto de cada recordatorio queda guardado y puede servir como nota personal. | No existe una nota independiente que pueda guardarse sin fecha y hora. |
 
 ### WhatsApp con cuentas separadas
 
@@ -93,7 +93,12 @@ recordatorios**. En el repositorio están el monorepo, la web y servicios
 desplegados, JWT, migraciones, [`CLAUDE.md`](../CLAUDE.md) y
 [`prompts/`](../prompts/README.md). El log conserva duraciones medidas cuando
 existen y deja explícitas las etapas que no se midieron; no se estimaron horas.
-Las notas siguen siendo una brecha funcional de la entrega.
+La mayoría de las etapas carece de duración medida: el entregable de tiempos
+es parcial y no puede completarse retrospectivamente con cifras fiables.
+El PDF no exige entidades separadas para notas y recordatorios. Esta entrega
+representa ambos en un registro con texto y aviso obligatorio; quien espere una
+nota sin fecha encontrará esa limitación. La disponibilidad HTTP no prueba
+que el guardado funcione de extremo a extremo en producción.
 
 ## Comprobación y operación
 

@@ -71,3 +71,6 @@ whatsapp-cuentas,después,,,,Validación documental; no se inició medición sep
 operacion-proveedores,antes,,,,Revisión de scripts contratos y documentación oficial; no se inició medición separada
 operacion-proveedores,durante,,,,Redacción de runbooks; no se inició medición separada
 operacion-proveedores,después,,,,Validación documental; no se inició medición separada
+revision-documentacion-final,antes,,,,No se inició medición al recibir la solicitud; no se reconstruyó la duración
+revision-documentacion-final,durante,,,,Lectura y corrección documental; no se midió por separado
+revision-documentacion-final,después,,,,Validación de enlaces y diff; no se midió por separado
