@@ -119,9 +119,11 @@ export function AccountLinkForm({ mode }: { mode: Mode }) {
             <button type="submit">Guardar contraseña</button>
           </form>
         )}
-        <p className="switch-link">
-          <Link href="/login">Ir a iniciar sesión</Link>
-        </p>
+        {(mode === "verify" || state === "success") && (
+          <p className="switch-link">
+            <Link href="/login">Ir a iniciar sesión</Link>
+          </p>
+        )}
       </section>
     </main>
   );

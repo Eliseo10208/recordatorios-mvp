@@ -1,16 +1,13 @@
-import { getToken } from "next-auth/jwt";
 import type { NextRequest } from "next/server";
 
 import { apiClient } from "@/lib/api";
 import { validOrigin } from "@/lib/origin";
+import { privateToken } from "@/lib/private-token";
 
 export async function POST(request: NextRequest) {
   if (!validOrigin(request))
     return Response.json({ title: "Forbidden" }, { status: 403 });
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-  });
+  const token = await privateToken(request);
   if (!token?.refreshToken) return new Response(null, { status: 204 });
   try {
     const { response } = await apiClient().POST("/api/v1/auth/logout", {
