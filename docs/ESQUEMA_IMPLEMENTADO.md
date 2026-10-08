@@ -36,8 +36,9 @@ erDiagram
 | `baileys_signal_keys` | `id` PK; `session_id → baileys_auth.session_id` | Claves Signal cifradas; `(session_id, key_type, key_id)` es único. |
 | `whatsapp_send_requests` | `request_key` PK | Registro idempotente de solicitudes al emisor y su resultado. |
 
-No existen todavía tablas de notas ni de suscripciones Web Push. Para una
-instalación nueva se aplica `alembic upgrade head` con la credencial de
+No existe una tabla de notas independiente: el texto se guarda en `reminders`.
+Tampoco existen tablas de suscripciones Web Push. Para una instalación
+nueva se aplica `alembic upgrade head` con la credencial de
 migración; el head del código documentado es `0006_reminder_soft_delete`.
 
 ## Evolución por migración

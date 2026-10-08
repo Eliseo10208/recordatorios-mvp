@@ -2,7 +2,7 @@
 
 ## 1. Propósito y alcance
 
-Este repositorio contiene una aplicación web pública construida para una prueba técnica de notas y recordatorios. Debe ser fácil de instalar, revisar, probar, desplegar y mantener. Es un monorepositorio para el frontend, la API, el worker de programación, la integración de WhatsApp, las migraciones, los contratos y la documentación. El corte actual implementa recordatorios y copias opcionales por WhatsApp; las notas independientes y Web Push siguen pendientes.
+Este repositorio contiene una aplicación web pública construida para una prueba técnica de notas y recordatorios. Debe ser fácil de instalar, revisar, probar, desplegar y mantener. Es un monorepositorio para el frontend, la API, el worker de programación, la integración de WhatsApp, las migraciones, los contratos y la documentación. El corte actual guarda texto personal en recordatorios con fecha y hora obligatorias y ofrece copias opcionales por WhatsApp. No hay modo de nota sin aviso; Web Push sigue pendiente.
 
 La IA se usa exclusivamente durante el desarrollo: análisis, planificación, programación, generación de pruebas y revisión. La aplicación desplegada no llama modelos, no usa RAG y no ejecuta agentes. **OpenAPI** es la especificación abierta y el contrato de la API; no es OpenAI ni implica una dependencia de IA.
 

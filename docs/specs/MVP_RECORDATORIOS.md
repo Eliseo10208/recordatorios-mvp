@@ -9,7 +9,8 @@
 El estado verificable del corte entregado está en
 [Estado de la entrega](../ESTADO_ENTREGA.md). Las secciones de Web Push, PWA y
 suscripciones describen el objetivo de producto, no funciones disponibles en
-`main`. Las notas independientes solicitadas en la prueba siguen pendientes.
+`main`. El PDF no exige notas como entidad separada: el texto de cada
+recordatorio puede usarse como nota programada, pero no se guarda sin aviso.
 
 ## 1. Definición del producto
 
@@ -18,8 +19,9 @@ siempre crea una notificación dentro de la app. Además puede mostrar una Web
 Push, si el usuario dio permiso, y enviar una copia por WhatsApp, si el usuario
 registró un número y activó ese canal.
 
-El corte implementado se centró en recordatorios. Las notas independientes que
-pide la prueba técnica siguen pendientes; no deben presentarse como terminadas.
+El corte implementado guarda notas breves como texto de recordatorios, siempre
+con fecha y hora. El PDF pide notas y recordatorios, sin definir si deben ser
+entidades distintas; la app no ofrece notas libres sin programación.
 El valor de este corte consiste en entregar un aviso a la hora correcta,
 conservarlo en una bandeja propia y mostrar qué ocurrió en cada canal.
 

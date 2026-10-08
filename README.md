@@ -23,11 +23,12 @@ correo, recordatorios, eliminación lógica, bandeja interna y despacho por
 WhatsApp. La verificación anterior confirma rutas y disponibilidad puntual;
 no prueba un envío real de correo ni la entrega de un mensaje nuevo. El estado
 del worker puede cambiar; `/readyz=200` sólo confirma un ciclo reciente.
-**Notas independientes y Web Push aún no están implementados.**
+**El texto de cada recordatorio puede servir como nota, pero exige fecha y hora;
+no hay modo de nota sin aviso. Web Push aún no está implementado.**
 
 Consulta el [estado detallado de la entrega](docs/ESTADO_ENTREGA.md) para ver
 qué funciones están en el código, cuáles se comprobaron en producción y qué
-falta para cubrir el enunciado de la prueba.
+límites tiene esta interpretación del enunciado de la prueba.
 
 ## Flujo implementado de recordatorios
 
@@ -75,7 +76,7 @@ usa únicamente para apoyar el proceso de desarrollo.
 | `api/` | FastAPI, worker, modelos, migraciones y pruebas. |
 | `whatsapp/` | Emisor central con Baileys y pruebas de contrato. |
 | `docs/` | Estado de entrega, especificación, esquema, ADR y contrato. |
-| `prompts/` | Prompts reales por etapa y tiempos medidos. |
+| `prompts/` | Prompts reales por etapa y registro de tiempos medidos o no medidos. |
 
 Requiere Node.js 24, pnpm 11.19, Python 3.13, uv y PostgreSQL. Instala las
 dependencias desde la raíz con `pnpm install --frozen-lockfile` y desde `api/`

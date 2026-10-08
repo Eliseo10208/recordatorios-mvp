@@ -49,7 +49,8 @@ entre conexiones directas y agrupadas en su
    mostrar credenciales. Consulta [WHATSAPP_EMISOR.md](WHATSAPP_EMISOR.md) para
    la vinculación.
 
-Las migraciones `0001`–`0006` crean 13 tablas; no crean notas ni Web Push.
+Las migraciones `0001`–`0006` crean 13 tablas. El texto personal se guarda
+en `reminders`; no hay tabla de notas independientes ni de Web Push.
 Alembic es la fuente de verdad del esquema. No supongas que el head de una base
 existente coincide con el código: consulta `alembic_version` antes y después
 de cada migración. Ejecuta migraciones **una sola vez** con el rol propietario,
