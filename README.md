@@ -10,9 +10,10 @@ recibir avisos y aceptan ese canal. El worker consume su contrato HTTP.
 
 ## Estado
 
-El emisor `whatsapp/` ya está desplegado en Render. Este corte integra registro,
-inicio de sesión, programación, bandeja interna y envíos de WhatsApp desde el
-worker. El frontend queda versionado, sin despliegue en Vercel por ahora.
+El emisor `whatsapp/`, la API y el worker están desplegados en Render. El
+frontend está publicado en [Vercel](https://recordatorios-web-one.vercel.app).
+Este corte integra registro, inicio de sesión, programación, bandeja interna y
+envíos de WhatsApp desde el worker.
 Web Push, verificación de correo y recuperación de contraseña siguen pendientes.
 
 ## Flujo previsto del MVP
@@ -235,6 +236,31 @@ número que controles, crea un recordatorio próximo y comprueba el aviso
 interno y el estado `accepted`. Esa prueba no forma parte de CI. Para
 revertir el corte, detén el worker y restaura API y web anteriores; deja las
 tablas aditivas sin uso hasta revisión, sin ejecutar un downgrade destructivo.
+
+## Frontend en Vercel
+
+El proyecto `recordatorios-web` está conectado al repositorio de GitHub, sigue
+`main` para producción y usa `web/` como Root Directory, Next.js y Node 24.
+Su dominio público es `https://recordatorios-web-one.vercel.app`. Configura
+estas variables sólo en el entorno Production de Vercel:
+
+- `API_BASE_URL=https://recordatorios-api.onrender.com`
+- `AUTH_URL=https://recordatorios-web-one.vercel.app`
+- `WEB_ORIGIN=https://recordatorios-web-one.vercel.app`
+- `AUTH_SECRET`: secreto aleatorio exclusivo de Auth.js, con al menos 32 bytes.
+
+No coloques `DATABASE_URL`, claves JWT de FastAPI, el token del emisor ni la
+clave de teléfonos en Vercel. El navegador llama a los endpoints BFF de
+Next.js y éstos consumen la API de Render. Después de cambiar una variable,
+crea otro despliegue: los anteriores conservan su configuración. Comprueba
+`/login`, `/register` y `/api/auth/providers`; una petición de registro con
+origen ajeno debe devolver 403.
+
+La sesión web actual usa el JWT cifrado de Auth.js con los tokens de API dentro
+de la cookie `HttpOnly`. La referencia opaca y el almacenamiento cifrado de esos
+tokens en Neon, previstos en el plan inicial, aún no están implementados.
+Para volver a la versión anterior del frontend, restaura el despliegue previo
+desde Vercel; API, worker y Neon no requieren rollback por ese cambio.
 
 ## Pruebas y límite de archivos
 
