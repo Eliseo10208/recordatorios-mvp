@@ -1,0 +1,425 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { signOut } from "next-auth/react";
+import { useCallback, useEffect, useState } from "react";
+
+import { NotificationInbox } from "@/features/reminders/notification-inbox";
+import { ReminderForm } from "@/features/reminders/reminder-form";
+import { WhatsAppSettings } from "@/features/reminders/whatsapp-settings";
+import type { components } from "@/lib/api-types";
+import { authenticatedFetch } from "@/lib/reminder-client";
+
+type Profile = components["schemas"]["UserPublic"];
+type Reminder = components["schemas"]["ReminderPublic"];
+type Page = components["schemas"]["ReminderPage"];
+type Destination = components["schemas"]["DestinationPublic"];
+type Status = "upcoming" | "fired" | "canceled";
+type View = "list" | "form" | "detail" | "inbox" | "settings";
+
+const labels: Record<Status, string> = {
+  upcoming: "Próximos",
+  fired: "Disparados",
+  canceled: "Cancelados",
+};
+
+function displayTime(item: Reminder): string {
+  return `${item.local_date} · ${item.local_time} · ${item.timezone}`;
+}
+
+function whatsappLabel(item: Reminder): string {
+  const labels: Record<NonNullable<Reminder["whatsapp_status"]>, string> = {
+    pending: "Pendiente",
+    sending: "Enviando",
+    accepted: "Aceptado por el servicio; entrega no confirmada",
+    failed: "Falló",
+    unknown: "Resultado desconocido; no se reenviará",
+    canceled: "Cancelado",
+  };
+  return item.whatsapp_status ? labels[item.whatsapp_status] : "programado";
+}
+
+export function DashboardClient() {
+  const router = useRouter();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [view, setView] = useState<View>("list");
+  const [status, setStatus] = useState<Status>("upcoming");
+  const [items, setItems] = useState<Reminder[]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Reminder | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [unread, setUnread] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [working, setWorking] = useState(false);
+  const [destination, setDestination] = useState<Destination | null>(null);
+
+  const loadCount = useCallback(async () => {
+    try {
+      const response = await authenticatedFetch(
+        "/api/notifications/unread-count",
+      );
+      if (response.ok) {
+        const data =
+          (await response.json()) as components["schemas"]["UnreadCount"];
+        setUnread(data.count);
+      }
+    } catch {
+      // The inbox shows its own error when opened.
+    }
+  }, []);
+
+  const loadReminders = useCallback(async (filter: Status, next?: string) => {
+    try {
+      const params = new URLSearchParams({ status: filter });
+      if (next) params.set("cursor", next);
+      const response = await authenticatedFetch(`/api/reminders?${params}`);
+      if (!response.ok) throw new Error("list unavailable");
+      const data = (await response.json()) as Page;
+      setItems((previous) =>
+        next ? [...previous, ...data.items] : data.items,
+      );
+      setCursor(data.next_cursor);
+      setError("");
+    } catch {
+      setError("No se pudieron cargar tus recordatorios.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    async function loadProfile() {
+      try {
+        const response = await authenticatedFetch("/api/account/me");
+        if (response.status === 401) {
+          router.replace("/login");
+          return;
+        }
+        if (!response.ok) throw new Error("profile unavailable");
+        if (active) setProfile((await response.json()) as Profile);
+      } catch {
+        if (active) setError("No se pudo cargar tu cuenta.");
+      }
+    }
+    async function loadDestination() {
+      try {
+        const response = await authenticatedFetch(
+          "/api/notification-settings/whatsapp",
+        );
+        if (response.ok && active)
+          setDestination((await response.json()) as Destination);
+      } catch {
+        // The settings view can show its own unavailable state.
+      }
+    }
+    const initial = window.setTimeout(() => {
+      void loadProfile();
+      void loadCount();
+      void loadDestination();
+    }, 0);
+    return () => {
+      active = false;
+      window.clearTimeout(initial);
+    };
+  }, [loadCount, router]);
+
+  useEffect(() => {
+    if (view !== "list") return;
+    const initial = window.setTimeout(() => void loadReminders(status), 0);
+    const timer = window.setInterval(() => {
+      void loadReminders(status);
+      void loadCount();
+    }, 15_000);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(timer);
+    };
+  }, [status, view, loadReminders, loadCount]);
+
+  async function openReminder(id: string) {
+    try {
+      const response = await authenticatedFetch(`/api/reminders/${id}`);
+      if (!response.ok) throw new Error("not found");
+      setSelected((await response.json()) as Reminder);
+      setView("detail");
+      setError("");
+    } catch {
+      setError("No se pudo abrir este recordatorio.");
+    }
+  }
+
+  async function cancelReminder() {
+    if (!selected) return;
+    setWorking(true);
+    try {
+      const response = await authenticatedFetch(
+        `/api/reminders/${selected.id}/cancel`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ expected_version: selected.version }),
+        },
+      );
+      if (!response.ok) throw new Error("cancel unavailable");
+      setSelected((await response.json()) as Reminder);
+      setStatus("canceled");
+      setError("");
+    } catch {
+      setError(
+        "No se pudo cancelar. Actualiza el recordatorio e inténtalo de nuevo.",
+      );
+    } finally {
+      setWorking(false);
+    }
+  }
+
+  async function logout() {
+    setWorking(true);
+    setError("");
+    try {
+      const response = await fetch("/api/account/logout", { method: "POST" });
+      if (!response.ok) throw new Error("logout unavailable");
+      await signOut({ callbackUrl: "/login" });
+    } catch {
+      setError("No se pudo cerrar sesión. Inténtalo de nuevo.");
+      setWorking(false);
+    }
+  }
+
+  return (
+    <main className="dashboard-shell">
+      <header className="dashboard-header">
+        <div className="brand">
+          <span className="brand-mark">✦</span> Recordatorios
+        </div>
+        <nav className="dashboard-nav" aria-label="Navegación principal">
+          <button
+            className="text-button"
+            onClick={() => {
+              setLoading(true);
+              setView("list");
+            }}
+          >
+            Mis recordatorios
+          </button>
+          <button className="text-button" onClick={() => setView("inbox")}>
+            Avisos ({unread})
+          </button>
+          <button className="text-button" onClick={() => setView("settings")}>
+            WhatsApp
+          </button>
+          <button
+            className="text-button"
+            onClick={() => void logout()}
+            disabled={working}
+          >
+            Cerrar sesión
+          </button>
+        </nav>
+      </header>
+
+      <div className="dashboard-content">
+        <div className="dashboard-intro">
+          <p className="eyebrow">TU ESPACIO</p>
+          <h1>Lo importante, a su tiempo.</h1>
+          {profile && (
+            <p className="muted">Sesión activa para {profile.email}</p>
+          )}
+          {profile && !profile.email_verified && (
+            <p className="notice">Tu correo está pendiente de verificación.</p>
+          )}
+        </div>
+
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+
+        {view === "list" && (
+          <section aria-labelledby="reminders-heading">
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">TU AGENDA</p>
+                <h2 id="reminders-heading">Recordatorios</h2>
+              </div>
+              <button
+                onClick={() => {
+                  setEditing(false);
+                  setView("form");
+                }}
+              >
+                Añadir recordatorio
+              </button>
+            </div>
+            <div
+              className="status-tabs"
+              role="group"
+              aria-label="Filtrar recordatorios"
+            >
+              {(Object.keys(labels) as Status[]).map((key) => (
+                <button
+                  key={key}
+                  className={key === status ? "active" : ""}
+                  onClick={() => {
+                    setLoading(true);
+                    setStatus(key);
+                  }}
+                  aria-pressed={key === status}
+                >
+                  {labels[key]}
+                </button>
+              ))}
+            </div>
+            {loading && (
+              <p className="muted" role="status">
+                Cargando recordatorios…
+              </p>
+            )}
+            {!loading && items.length === 0 && (
+              <div className="empty-state">
+                <span aria-hidden="true">✦</span>
+                <h3>
+                  {status === "upcoming"
+                    ? "Todavía no tienes recordatorios"
+                    : `No hay recordatorios ${labels[status].toLowerCase()}`}
+                </h3>
+                <p>Organiza tu próximo aviso en un momento.</p>
+                {status === "upcoming" && (
+                  <button
+                    onClick={() => {
+                      setEditing(false);
+                      setView("form");
+                    }}
+                  >
+                    Crear mi primer recordatorio
+                  </button>
+                )}
+              </div>
+            )}
+            <div className="reminder-list">
+              {items.map((item) => (
+                <article className="reminder-item" key={item.id}>
+                  <div>
+                    <p className="item-meta">{displayTime(item)}</p>
+                    <h3>{item.message}</h3>
+                    <p className="status-pill">
+                      {item.status === "processing"
+                        ? "En proceso"
+                        : labels[status]}
+                    </p>
+                    {(item.send_whatsapp || item.whatsapp_status) && (
+                      <p className="item-meta">
+                        WhatsApp: {whatsappLabel(item)}
+                      </p>
+                    )}
+                  </div>
+                  <button
+                    className="text-button"
+                    onClick={() => void openReminder(item.id)}
+                  >
+                    Ver detalle
+                  </button>
+                </article>
+              ))}
+            </div>
+            {cursor && (
+              <button
+                className="secondary-button load-more"
+                onClick={() => void loadReminders(status, cursor)}
+              >
+                Cargar más
+              </button>
+            )}
+          </section>
+        )}
+
+        {view === "form" && (
+          <section className="panel" aria-labelledby="form-heading">
+            <p className="eyebrow">PROGRAMAR</p>
+            <h2 id="form-heading">
+              {editing ? "Editar recordatorio" : "Nuevo recordatorio"}
+            </h2>
+            <ReminderForm
+              initial={editing ? (selected ?? undefined) : undefined}
+              whatsappAvailable={Boolean(destination?.active)}
+              onClose={() => setView(editing ? "detail" : "list")}
+              onSaved={(item) => {
+                setSelected(item);
+                setView("detail");
+                void loadCount();
+              }}
+            />
+          </section>
+        )}
+
+        {view === "detail" && selected && (
+          <section className="panel" aria-labelledby="detail-heading">
+            <p className="eyebrow">DETALLE DEL AVISO</p>
+            <h2 id="detail-heading">{selected.message}</h2>
+            <p className="muted">{displayTime(selected)}</p>
+            <p className="status-pill">
+              Estado:{" "}
+              {selected.status === "processing"
+                ? "En proceso"
+                : selected.status}
+            </p>
+            <p className="field-hint">
+              Versión {selected.version} · Dentro de la app
+            </p>
+            {(selected.send_whatsapp || selected.whatsapp_status) && (
+              <p className="field-hint">
+                WhatsApp: {whatsappLabel(selected)} ·{" "}
+                {destination?.masked_number ?? "número desactivado"}
+              </p>
+            )}
+            <div className="form-actions">
+              <button
+                className="secondary-button"
+                onClick={() => setView("list")}
+              >
+                Volver a la lista
+              </button>
+              {selected.status === "scheduled" && (
+                <>
+                  <button
+                    className="secondary-button"
+                    onClick={() => {
+                      setEditing(true);
+                      setView("form");
+                    }}
+                  >
+                    Editar
+                  </button>
+                  <button
+                    className="danger-button"
+                    onClick={() => void cancelReminder()}
+                    disabled={working}
+                  >
+                    Cancelar recordatorio
+                  </button>
+                </>
+              )}
+            </div>
+          </section>
+        )}
+
+        {view === "inbox" && (
+          <NotificationInbox
+            onCountChange={() => void loadCount()}
+            onOpenReminder={(id) => void openReminder(id)}
+          />
+        )}
+        {view === "settings" && (
+          <WhatsAppSettings
+            destination={destination}
+            onChange={setDestination}
+            onClose={() => setView("list")}
+          />
+        )}
+      </div>
+    </main>
+  );
+}
