@@ -35,6 +35,18 @@ class RefreshRequest(BaseModel):
     refresh_token: str = Field(min_length=20, max_length=256)
 
 
+class AccountTokenRequest(BaseModel):
+    token: str = Field(min_length=40, max_length=128)
+
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(AccountTokenRequest):
+    new_password: str = Field(min_length=12, max_length=128)
+
+
 class Problem(BaseModel):
     type: str
     title: str

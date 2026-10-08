@@ -14,7 +14,8 @@ El emisor `whatsapp/`, la API y el worker están desplegados en Render. El
 frontend está publicado en [Vercel](https://recordatorios-web-one.vercel.app).
 Este corte integra registro, inicio de sesión, programación, bandeja interna y
 envíos de WhatsApp desde el worker.
-Web Push, verificación de correo y recuperación de contraseña siguen pendientes.
+Web Push sigue pendiente. La verificación y recuperación por correo se preparan
+en `feature/account-email` y requieren la release `0.3.0` para producción.
 
 ## Flujo previsto del MVP
 
@@ -103,8 +104,36 @@ worker añadirá `/v1/messages` a esa URL.
 `api/` implementa registro, login, renovación, logout y perfil autenticado.
 `web/` usa Auth.js para la sesión del navegador y endpoints BFF explícitos.
 El registro inicia sesión automáticamente. El correo queda pendiente de
-verificación: el envío con Resend y la recuperación de contraseña son la
-siguiente entrega. Este corte no envía emails reales.
+verificación hasta consumir un enlace válido.
+
+## Correo de cuenta
+
+`0005_account_tokens` guarda sólo SHA-256 de tokens aleatorios de 32 bytes.
+La verificación vence a las 24 horas y la recuperación a los 30 minutos.
+`POST /api/v1/auth/verify-email`, `/resend-verification`, `/forgot-password`
+y `/reset-password` completan el contrato. Una recuperación confirma el correo,
+revoca todas las sesiones y exige iniciar sesión de nuevo. El BFF web ofrece
+`/forgot-password`, `/reset-password` y `/verify-email`; el token llega en el
+fragmento y se retira de la barra antes de enviarlo a la API.
+
+Antes de activar el correo en producción, crea un punto de recuperación en Neon,
+comprueba que `alembic_version` sea `0004_whatsapp_delivery`, aplica `0005`
+una sola vez mediante la credencial de migración y verifica
+`0005_account_tokens`. Después ejecuta `api/scripts/provision_app_role.py`
+con `MIGRATION_DATABASE_URL`: si `recordatorios_app` existe, concede los
+permisos de `account_tokens` sin cambiar su contraseña. El rol continúa sin
+acceso a las tablas de Baileys. Si hubiera que crearlo desde cero, el script
+requiere `APP_DB_PASSWORD` de al menos 32 caracteres.
+
+Configura únicamente en la API de Render `RESEND_API_KEY`,
+`RESEND_FROM_EMAIL=Recordatorios <no-reply@dominio-verificado>` y
+`WEB_BASE_URL=https://recordatorios-web-one.vercel.app`. Deja
+`ACCOUNT_EMAIL_ENABLED=false` hasta que API y web de la release estén
+desplegadas y se hayan comprobado los permisos. Al activarlo, la API limita
+los envíos a 80 al día, más límites por correo e IP. Los fallos de Resend no
+revierten el registro: el usuario puede solicitar otro enlace. Para rollback,
+desactiva `ACCOUNT_EMAIL_ENABLED` y restaura la versión anterior de API y web;
+la tabla aditiva permanece y no se ejecuta downgrade destructivo.
 
 Configura `api/.env.example` y `web/.env.example` fuera de Git. La API necesita
 un par RSA para JWT RS256; los PEM pueden pasarse en variables de entorno con

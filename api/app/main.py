@@ -6,13 +6,15 @@ from collections.abc import Awaitable, Callable
 from typing import Annotated, Any
 from uuid import uuid4
 
-from fastapi import Depends, FastAPI, Header, Request, Response
+from fastapi import BackgroundTasks, Depends, FastAPI, Header, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.account_email import issue_link, send_email
+from app.account_email_routes import router as account_email_router
 from app.auth_service import (
     AuthProblem,
     authenticate_access,
@@ -28,9 +30,10 @@ from app.schemas import Credentials, Problem, RefreshRequest, TokenPair, UserPub
 from app.settings import Settings, get_settings
 from app.whatsapp_routes import router as whatsapp_router
 
-app = FastAPI(title="Recordatorios API", version="0.2.0")
+app = FastAPI(title="Recordatorios API", version="0.3.0")
 app.include_router(reminder_router)
 app.include_router(whatsapp_router)
+app.include_router(account_email_router)
 Db = Annotated[Session, Depends(get_db)]
 Config = Annotated[Settings, Depends(get_settings)]
 
@@ -115,11 +118,17 @@ def client_ip(request: Request) -> str:
     responses=problem_responses(409, 422, 429),
 )
 def register_route(
-    body: Credentials, request: Request, db: Db, settings: Config
+    body: Credentials,
+    request: Request,
+    tasks: BackgroundTasks,
+    db: Db,
+    settings: Config,
 ) -> UserPublic:
-    return public_user(
-        register(db, settings, str(body.email), body.password, client_ip(request))
-    )
+    user = register(db, settings, str(body.email), body.password, client_ip(request))
+    message = issue_link(db, settings, user, "verify_email", client_ip(request))
+    if message:
+        tasks.add_task(send_email, settings, message)
+    return public_user(user)
 
 
 @app.post(
