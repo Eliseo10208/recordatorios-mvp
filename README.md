@@ -105,10 +105,12 @@ no credenciales válidas ni una configuración productiva.
 
 Requiere Node.js 24, pnpm 11.19, Python 3.13, uv y PostgreSQL. Copia
 `whatsapp/.env.example` a `whatsapp/.env` y configura secretos reales fuera de
-Git. `DATABASE_URL` debe ser la conexión **directa** de Neon: el bloqueo de
+Git. Para ejecutar Alembic, define `MIGRATION_DATABASE_URL` con la conexión
+**directa del rol propietario**, que tiene permisos DDL; verifica el host y el
+nombre de base sin mostrar la contraseña. Esta credencial no se usa en el
+servicio WhatsApp. Después de migrar y crear el rol `whatsapp_sender`, configura
+`whatsapp/DATABASE_URL` con la conexión **directa de ese rol**: el bloqueo de
 sesión usa una conexión PostgreSQL persistente y no funciona con el pooler.
-Define `MIGRATION_DATABASE_URL` con esa misma conexión antes de ejecutar
-Alembic; verifica el host y el nombre de base sin mostrar la contraseña.
 `BAILEYS_ENCRYPTION_KEY` es una clave aleatoria de 32 bytes codificada en
 base64; conserva la misma clave tras reinicios. `WHATSAPP_SERVICE_TOKEN` es
 un secreto aleatorio de al menos 32 caracteres compartido sólo con el worker.
@@ -116,8 +118,8 @@ Después de la migración, `api/scripts/provision_whatsapp_role.py` crea el rol
 `whatsapp_sender` con acceso únicamente a las tres tablas del emisor. Requiere
 `MIGRATION_DATABASE_URL` y una contraseña aleatoria en
 `WHATSAPP_DB_PASSWORD`; no imprime ninguno de los dos valores. Usa la URL
-directa de ese rol como `whatsapp/DATABASE_URL` en local y Render. La URL del
-propietario se reserva para migraciones.
+directa de ese rol en local y Render. La URL del propietario se reserva para
+migraciones y provisión de roles.
 
 ```bash
 pnpm install --frozen-lockfile
@@ -173,13 +175,16 @@ La verificación vence a las 24 horas y la recuperación a los 30 minutos.
 `POST /api/v1/auth/verify-email`, `/resend-verification`, `/forgot-password`
 y `/reset-password` completan el contrato. Una recuperación confirma el correo,
 revoca todas las sesiones y exige iniciar sesión de nuevo. El BFF web ofrece
-`/forgot-password`, `/reset-password` y `/verify-email`; el token llega en el
-fragmento y se retira de la barra antes de enviarlo a la API.
+las rutas bajo `/api/account/`. Las páginas web son `/forgot-password`,
+`/reset-password` y `/verify-email`; el token llega en el fragmento y se
+retira de la barra antes de enviarlo a la API.
 
 Antes de activar el correo en producción, crea un punto de recuperación en Neon,
-comprueba que `alembic_version` sea `0004_whatsapp_delivery`, aplica `0005`
-una sola vez mediante la credencial de migración y verifica
-`0005_account_tokens`. Después ejecuta `api/scripts/provision_app_role.py`
+consulta `alembic_version` y aplica las migraciones pendientes hasta el head
+actual `0006_reminder_soft_delete` una sola vez mediante la credencial de
+migración. Una instalación que ya está en `0005_account_tokens` o posterior no
+necesita repetir esa migración; verifica que exista la tabla `account_tokens`.
+Después ejecuta `api/scripts/provision_app_role.py`
 con `MIGRATION_DATABASE_URL`: si `recordatorios_app` existe, concede los
 permisos de `account_tokens` sin cambiar su contraseña. El rol continúa sin
 acceso a las tablas de Baileys. Si hubiera que crearlo desde cero, el script
@@ -408,6 +413,26 @@ python scripts/check_source_lines.py
 pnpm test
 cd api && uv run --frozen python -m pytest -q
 ```
+
+Para repetir las pruebas E2E de navegador, crea primero una base PostgreSQL
+aislada cuyo nombre contenga `_test`. Configura `MIGRATION_DATABASE_URL` y
+`TEST_DATABASE_URL` para esa base, aplica Alembic y ejecuta desde la raíz:
+
+```bash
+pnpm install --frozen-lockfile
+cd api
+uv sync --frozen
+uv run alembic upgrade head
+cd ..
+pnpm --filter @recordatorios/web exec playwright install chromium webkit
+pnpm --filter @recordatorios/web build
+cd api
+uv run --frozen python -m scripts.run_auth_e2e
+```
+
+El runner inicia API, worker y web con claves sintéticas; no envía correos ni
+mensajes WhatsApp reales. En Linux, Playwright puede necesitar dependencias del
+sistema: CI instala los navegadores con `playwright install --with-deps`.
 
 Cuando se corrija un bug, añade primero una prueba que reproduzca el fallo y
 conserva esa prueba para detectar futuras regresiones.
