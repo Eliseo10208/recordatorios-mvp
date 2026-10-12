@@ -90,3 +90,6 @@ correccion-estimacion,después,,,,Corrección retrospectiva del usuario registra
 ci-fallo-merge,antes,,,,Revisión de las ejecuciones de GitHub; duración no medida por separado
 ci-fallo-merge,durante,,,,Diagnóstico y ajuste del entorno E2E; duración no medida por separado
 ci-fallo-merge,después,,,,Validación local y en CI; duración no medida por separado
+ajustes-readme,antes,,,,Revisión de hallazgos y fuentes; duración no medida
+ajustes-readme,durante,,,,Corrección documental; duración no medida
+ajustes-readme,después,,,,Validación de enlaces y diff; duración no medida
